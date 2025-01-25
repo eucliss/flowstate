@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, shallowRef, defineEmits } from 'vue'
 import PlusIcon from '../assets/Plus.svg?component'
+import ResetIcon from '../assets/Reset.svg?component'
 
-const emit = defineEmits(['addNode'])
+const emit = defineEmits(['addNode', 'reset'])
 const icons = shallowRef([
-  { id: 1, name: 'Add Node', icon: PlusIcon, onClick: () => emit('addNode') }
+  { id: 1, name: 'Add Node', icon: PlusIcon, onClick: () => emit('addNode') },
+  { id: 2, name: 'Reset', icon: ResetIcon, onClick: () => emit('reset') }
 ])
 
 const hoveredIcon = ref<number | null>(null)
@@ -20,7 +22,7 @@ const hoveredIcon = ref<number | null>(null)
         :class="{ 'icon-hovered': hoveredIcon === icon.id }"
         @mouseover="hoveredIcon = icon.id"
         @mouseleave="hoveredIcon = null"
-        @click="icon.id === 1 ? $emit('addNode') : null"
+        @click="icon.id === 1 ? $emit('addNode') : icon.id === 2 ? $emit('reset') : null"
       >
         <div class="icon">
           <component v-if="typeof icon.icon === 'object'" :is="icon.icon" />

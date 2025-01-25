@@ -7,6 +7,8 @@ import (
 
 	"context"
 
+	"flowstate/pkg/log_router"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -108,17 +110,40 @@ func handleAddNode(client *redis.Client, req *http.Request) {
 	fmt.Println("--------------------------------")
 	fmt.Println("client: ", client)
 	fmt.Println("--------------------------------")
-	node.Id = "node:" + node.Id
-	err = client.HSet(ctx, node.Id, node).Err()
+	err = client.HSet(ctx, "node:"+node.Id, node).Err()
 	if err != nil {
 		panic(err)
 	}
+}
+
+func handleUpdateNode(client *redis.Client, req *http.Request) {
+	ctx := context.Background()
+	fmt.Println("Got update node request")
+	fmt.Println(req)
+	fmt.Println("--------------------------------")
+	decoder := json.NewDecoder(req.Body)
+	var node Node
+	err := decoder.Decode(&node)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("node: ", node)
+	fmt.Println("--------------------------------")
+	fmt.Println("client: ", client)
+	fmt.Println("--------------------------------")
+	err = client.HSet(ctx, "node:"+node.Id, node).Err()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Updated node: ", node)
+
 }
 
 func handleAddEdge(client *redis.Client, req *http.Request) {
 	ctx := context.Background()
 	fmt.Println("Got add edge request")
 	fmt.Println(req)
+
 	fmt.Println("--------------------------------")
 	decoder := json.NewDecoder(req.Body)
 	var edge Edge
@@ -131,8 +156,7 @@ func handleAddEdge(client *redis.Client, req *http.Request) {
 	fmt.Println("--------------------------------")
 	fmt.Println("client: ", client)
 	fmt.Println("--------------------------------")
-	edge.Id = "edge:" + edge.Id
-	err = client.HSet(ctx, edge.Id, edge).Err()
+	err = client.HSet(ctx, "edge:"+edge.Id, edge).Err()
 	if err != nil {
 		panic(err)
 	}
@@ -197,17 +221,76 @@ func loadFlowState(client *redis.Client) FlowState {
 	}
 }
 
-func removeNode(client *redis.Client, id string) {
+func handleDeleteNode(client *redis.Client, req *http.Request) {
 	ctx := context.Background()
+	decoder := json.NewDecoder(req.Body)
+	var id string
+	err := decoder.Decode(&id)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("About to delete the node ", id)
 	res, err := client.Del(ctx, "node:"+id).Result()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Deleted node: ", id)
 	fmt.Println("res: ", res)
 
 }
 
+func handleDeleteEdges(client *redis.Client, req *http.Request) {
+	ctx := context.Background()
+	decoder := json.NewDecoder(req.Body)
+	fmt.Println("req: ", req.Body)
+	var ids []string
+	err := decoder.Decode(&ids)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("About to delete the edges ", ids)
+	for _, id := range ids {
+		client.Del(ctx, "edge:"+id).Result()
+	}
+	fmt.Println("Deleted edges: ", ids)
+}
+
+func deleteAllNodes(client *redis.Client) {
+	ctx := context.Background()
+	iter := client.Scan(ctx, 0, "node:*", 0).Iterator()
+
+	for iter.Next(ctx) {
+		key := iter.Val()
+		client.Del(ctx, key).Result()
+	}
+
+	if err := iter.Err(); err != nil {
+		panic(err)
+	}
+}
+
+func deleteAllEdges(client *redis.Client) {
+	ctx := context.Background()
+	iter := client.Scan(ctx, 0, "edge:*", 0).Iterator()
+
+	for iter.Next(ctx) {
+		key := iter.Val()
+		client.Del(ctx, key).Result()
+	}
+
+	if err := iter.Err(); err != nil {
+		panic(err)
+	}
+}
+
 func main() {
+
+	logRouter := log_router.NewLogRouter()
+	logRouter.Source = "https://hooks.torq.io/v1/webhooks/7b9ffae7-9867-44a9-8988-e02a7b282bbc/workflows/eb5539bb-0336-412d-b18a-04ceb86099ab/sync"
+	logRouter.Destination = "http://localhost:5080/api/flowstate/test_torq3/_json"
+	logRouter.Router()
+
+	return
 
 	// Start Redis Client
 
@@ -217,10 +300,15 @@ func main() {
 		DB:       0,  // Use default DB
 		Protocol: 2,  // Connection protocol
 	})
-	flowState := loadFlowState(client)
-	fmt.Println("flowState: ", flowState)
+
+	// deleteAllNodes(client)
+	// deleteAllEdges(client)
 
 	// addStartingNodes(client)
+	// addStartingEdges(client)
+
+	flowState := loadFlowState(client)
+	fmt.Println("flowState: ", flowState)
 
 	// Start Router for API
 	r := chi.NewRouter()
@@ -263,12 +351,92 @@ func main() {
 			"status":  "success",
 		})
 	})
+	r.Post("/update-node", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Got update node request")
+		fmt.Println(r)
+		fmt.Println("--------------------------------")
+		// Add a node to the flow state
+		// Get the node from the request body
+		// Add the node to the flow state
+		// Return the flow state
+		handleUpdateNode(client, r)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Node added",
+			"status":  "success",
+		})
+	})
+	r.Post("/add-edge", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Got add edge request")
+		fmt.Println(r)
+		fmt.Println("--------------------------------")
+		// Add a node to the flow state
+		// Get the node from the request body
+		// Add the node to the flow state
+		// Return the flow state
+		handleAddEdge(client, r)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Edge added",
+			"status":  "success",
+		})
+	})
+	r.Post("/connect-edge", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Got connect edge request")
+		fmt.Println(r)
+		fmt.Println("--------------------------------")
+		// Add a node to the flow state
+		// Get the node from the request body
+		// Add the node to the flow state
+		// Return the flow state
+		handleAddEdge(client, r)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Edge added",
+			"status":  "success",
+		})
+	})
+	r.Post("/delete-node", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Got delete node request")
+		fmt.Println(r)
+		fmt.Println("--------------------------------")
+		handleDeleteNode(client, r)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Node deleted",
+			"status":  "success",
+		})
+	})
+	r.Post("/delete-edges", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Got delete edges request")
+		fmt.Println(r)
+		fmt.Println("--------------------------------")
+		handleDeleteEdges(client, r)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Edges deleted",
+			"status":  "success",
+		})
+	})
 
 	r.Get("/load-flow-state", func(w http.ResponseWriter, r *http.Request) {
 		flowState := loadFlowState(client)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"message": "Flow state loaded",
+			"status":  "success",
+			"nodes":   flowState.Nodes,
+			"edges":   flowState.Edges,
+		})
+	})
+
+	r.Get("/reset", func(w http.ResponseWriter, r *http.Request) {
+		deleteAllNodes(client)
+		deleteAllEdges(client)
+		flowState := loadFlowState(client)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Flow state reset",
 			"status":  "success",
 			"nodes":   flowState.Nodes,
 			"edges":   flowState.Edges,

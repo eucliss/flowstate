@@ -3,98 +3,86 @@ import { ref, watch, onMounted } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'  
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 
-
 import SpecialNode from './components/SpecialNode.vue'
 import SpecialEdge from './components/SpecialEdge.vue'
 import Background from './components/Background.vue'
 import MenuBar from './components/MenuBar.vue'
-// these are our nodes
-// const nodes = ref<Node[]>([
-//   // an input node, specified by using `type: 'input'`
-//   {
-//     id: '1',
-//     type: 'input',
-//     position: { x: 250, y: 5 },
-//     // all nodes can have a data object containing any data you want to pass to the node
-//     // a label can property can be used for default nodes
-//     data: { label: 'Node 1' },
-//   },
-
-//   // default node, you can omit `type: 'default'` as it's the fallback type
-//   {
-//     id: '2',
-//     position: { x: 100, y: 100 },
-//     data: { label: 'Node 2' },
-//   },
-
-//   // An output node, specified by using `type: 'output'`
-//   {
-//     id: '3',
-//     type: 'output',
-//     position: { x: 400, y: 200 },
-//     data: { label: 'Node 3' },
-//   },
-
-//   // this is a custom node
-//   // we set it by using a custom type name we choose, in this example `special`
-//   // the name can be freely chosen, there are no restrictions as long as it's a string
-//   // {
-//   //   id: '4',
-//   //   type: 'special', // <-- this is the custom node type name
-//   //   position: { x: 400, y: 200 },
-//   //   data: {
-//   //     label: 'Node 4',
-//   //     hello: 'world',
-//   //   },
-//   // },
-// ])
 
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
-// these are our edges
-// const edges = ref<Edge[]>([
-//   // default bezier edge
-//   // consists of an edge id, source node id and target node id
-//   {
-//     id: 'e1->2',
-//     source: '1',
-//     target: '2',
-//   },
-
-//   // set `animated: true` to create an animated edge path
-//   {
-//     id: 'e2->3',
-//     source: '2',
-//     target: '3',
-//     animated: true,
-//   },
-
-//   // a custom edge, specified by using a custom type name
-//   // we choose `type: 'special'` for this example
-//   // {
-//   //   id: 'e3->4',
-//   //   type: 'special',
-//   //   source: '3',
-//   //   target: '4',
-
-//   //   // all edges can have a data object containing any data you want to pass to the edge
-//   //   data: {
-//   //     hello: 'world',
-//   //   }
-//   // },
-// ])
-
 const ready = ref(false)
 
 const instance = useVueFlow()
-const { getNodes, onPaneReady, getEdges } = instance
+const { 
+  getNodes, 
+  onPaneReady, 
+  getEdges, 
+  getSelectedNodes, 
+  getConnectedEdges,
+  getIncomers,
+  onEdgeClick, 
+  onEdgesChange,
+  onNodeDragStop,
+  onConnect
+} = instance
+
+// onEdgesChange((event) => {
+//   console.log("edges changed: ", event)
+// })
+
+onNodeDragStop(async (event) => { 
+  console.log("node dragged: ", event)
+  const node = {
+    id: event.node.id,
+    x: Math.floor(event.node.position.x),
+    y: Math.floor(event.node.position.y),
+    label: event.node.data.label,
+    type: event.node.type,
+  }
+  const response = await fetch("http://localhost:3000/update-node", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(node),
+  });
+  console.log("response: ", response)
+  const data = await response.json();
+  console.log('Data fetched:', data);
+  await loadFlowState()
+})
+
+onConnect(async (event) => {
+  const new_edge = {
+    id: event.source + "->" + event.target,
+    source: event.source,
+    target: event.target,
+    animated: true,
+  }
+  edges.value.push(new_edge)
+  // Connected a new edge
+  const response = await fetch("http://localhost:3000/connect-edge", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(new_edge),
+  });
+  console.log("response: ", response)
+  const data = await response.json();
+  console.log('Data fetched:', data);
+  console.log("connect: ", event)
+  await loadFlowState()
+})
 
 // watch the stored nodes
-watch(getNodes, (nodes) => console.log('nodes changed', nodes))
-watch(getEdges, (edges) => console.log('edges changed', edges))
+// watch(getNodes, (nodes) => console.log('nodes changed', nodes))
+// watch(getEdges, (edges) => console.log('edges changed watching', edges))
 
 const addNode  = async () => {
-  const id = (nodes.value.length + 1).toString()
+  console.log("adding a new node, len of nodes: ", nodes.value.length)
+  // const id = (nodes.value.length + 1).toString()
+  const id = crypto.randomUUID()
   const position = {
     x: 0,
     y: 100,
@@ -127,23 +115,9 @@ const addNode  = async () => {
   console.log("response: ", response)
   const data = await response.json();
   console.log('Data fetched:', data);
+  await loadFlowState()
 }
 
-// function addNode = () {
-//   const id = (nodes.value.length + 1).toString()
-//   const position = {
-//     x: 0,
-//     y: 100,
-//   }
-  
-//   nodes.value.push({
-//     id,
-//     type: 'default',
-//     position,
-//     data: { label: `Node ${id}` },
-//   })
-
-// }
 function removeEdge(id) {
   edges.value = edges.value.filter((edge) => edge.id !== id)
 }
@@ -154,8 +128,9 @@ async function loadFlowState() {
   });
   const data = await response.json();
   console.log('Data fetched:', data);
+  const temp_nodes = []
   for (const node of data.nodes) {
-    nodes.value.push({
+    temp_nodes.push({
       id: node.Id,
       type: node.Type,
       position: {
@@ -167,23 +142,75 @@ async function loadFlowState() {
       },
     })
   }
+  const temp_edges = []
   for (const edge of data.edges) {
-    edges.value.push({
+    temp_edges.push({
       id: edge.Id,
       source: edge.Source,
       target: edge.Target,
       animated: edge.Animated,
     })
   }
+  nodes.value = temp_nodes
+  edges.value = temp_edges
 }
 
 onMounted(async () => {
   await loadFlowState()
   ready.value = true
+  window.addEventListener('keydown', handleKeyDown)
 })
+
+const handleKeyDown = async (event) => {
+  console.log("selected nodes: ", getSelectedNodes.value)
+  if (getSelectedNodes.value.length == 0) {
+    return
+  }
+  const selected_node = getSelectedNodes.value[0].id
+  const connections = getConnectedEdges(selected_node)
+  const connection_ids = connections.map((edge) => edge.id)
+  if (event.keyCode === 46 || event.keyCode === 8) {
+    var response = await fetch("http://localhost:3000/delete-node", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(selected_node),
+  });
+  console.log("response: ", response)
+  var data = await response.json();
+  console.log('Data fetched:', data);
+
+  response = await fetch("http://localhost:3000/delete-edges", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(connection_ids),
+  });
+  console.log("delete edges response: ", response)
+  data = await response.json();
+  console.log('delete edges data:', data);
+  }
+  await loadFlowState()
+
+}
+
+const resetFlowState = async () => {
+  const response = await fetch("http://localhost:3000/reset", {
+    method: 'GET',
+  });
+  const data = await response.json();
+  console.log('Data fetched:', data);
+  await loadFlowState()
+}
 
 console.log("nodes: ", nodes.value)
 console.log("edges: ", edges.value)
+
+onEdgeClick((event) => {
+  console.log("edge clicked: ", event)
+})
 
 onPaneReady((i) => i.fitView())
 </script>
@@ -195,7 +222,7 @@ onPaneReady((i) => i.fitView())
     <VueFlow :nodes="nodes" :edges="edges">
       
     </VueFlow>
-    <MenuBar @add-node="addNode" />
+    <MenuBar @add-node="addNode" @reset="resetFlowState" />
   </div>
 </template>
 
