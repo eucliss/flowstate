@@ -79,7 +79,7 @@ onConnect(async (event) => {
 // watch(getNodes, (nodes) => console.log('nodes changed', nodes))
 // watch(getEdges, (edges) => console.log('edges changed watching', edges))
 
-const addNode  = async () => {
+const addNode  = async (nodeData: { name: string }) => {
   console.log("adding a new node, len of nodes: ", nodes.value.length)
   // const id = (nodes.value.length + 1).toString()
   const id = crypto.randomUUID()
@@ -92,7 +92,7 @@ const addNode  = async () => {
     id,
     type: 'default',
     position,
-    data: { label: `Node ${id}` },
+    data: { label: nodeData.name },
   }
   nodes.value.push(node)
 
@@ -101,7 +101,7 @@ const addNode  = async () => {
     type: node.type,
     x: node.position.x,
     y: node.position.y,
-    label: node.data.label,
+    label: nodeData.name,
   }
 
   // send post request to server to add node
@@ -213,6 +213,13 @@ onEdgeClick((event) => {
 })
 
 onPaneReady((i) => i.fitView())
+
+const handleAddNode = (nodeData: { name: string }) => {
+  console.log('App - Received node data:', nodeData)
+  // Add your node creation logic here
+  addNode(nodeData)
+}
+
 </script>
 
 <template>
@@ -222,7 +229,10 @@ onPaneReady((i) => i.fitView())
     <VueFlow :nodes="nodes" :edges="edges">
       
     </VueFlow>
-    <MenuBar @add-node="addNode" @reset="resetFlowState" />
+    <MenuBar 
+      @add-node="handleAddNode"
+      @reset="resetFlowState"
+    />
   </div>
 </template>
 
