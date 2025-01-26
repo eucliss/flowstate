@@ -2,14 +2,39 @@
 import { ref, shallowRef, defineEmits } from 'vue'
 import PlusIcon from '../assets/Plus.svg?component'
 import ResetIcon from '../assets/Reset.svg?component'
+import AddNodeDrawer from './AddNodeDrawer.vue'
 
 const emit = defineEmits(['addNode', 'reset'])
+const showDrawer = ref(false)
+const activeIcon = ref(null)
+
 const icons = shallowRef([
-  { id: 1, name: 'Add Node', icon: PlusIcon, onClick: () => emit('addNode') },
-  { id: 2, name: 'Reset', icon: ResetIcon, onClick: () => emit('reset') }
+  { id: 1, name: 'Add Node', icon: PlusIcon, onClick: () => handleClick(1) },
+  { id: 2, name: 'Reset', icon: ResetIcon, onClick: () => handleClick(2) }
 ])
 
 const hoveredIcon = ref<number | null>(null)
+
+const handleClick = (id: number) => {
+  activeIcon.value = id
+  if (id === 1) {
+    showDrawer.value = true
+  } else if (id === 2) {
+    emit('reset')
+  }
+}
+
+const closeDrawer = () => {
+  showDrawer.value = false
+  activeIcon.value = null
+}
+
+const handleAddNode = (nodeData: { name: string }) => {
+  console.log('MenuBar - Received nodeData:', nodeData)
+  emit('addNode', nodeData)
+  closeDrawer()
+}
+
 </script>
 
 <template>
@@ -22,7 +47,7 @@ const hoveredIcon = ref<number | null>(null)
         :class="{ 'icon-hovered': hoveredIcon === icon.id }"
         @mouseover="hoveredIcon = icon.id"
         @mouseleave="hoveredIcon = null"
-        @click="icon.id === 1 ? $emit('addNode') : icon.id === 2 ? $emit('reset') : null"
+        @click="icon.onClick"
       >
         <div class="icon">
           <component v-if="typeof icon.icon === 'object'" :is="icon.icon" />
@@ -32,6 +57,13 @@ const hoveredIcon = ref<number | null>(null)
       </div>
     </div>
   </div>
+
+  <!-- Drawer -->
+  <AddNodeDrawer 
+    v-if="showDrawer" 
+    @close="closeDrawer"
+    @addNode="handleAddNode" 
+  />
 </template>
 
 <style scoped>
@@ -137,4 +169,5 @@ const hoveredIcon = ref<number | null>(null)
   width: 26px;
   height: 26px;
 }
+
 </style>

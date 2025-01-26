@@ -7,8 +7,6 @@ import (
 
 	"context"
 
-	"flowstate/pkg/log_router"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -285,12 +283,12 @@ func deleteAllEdges(client *redis.Client) {
 
 func main() {
 
-	logRouter := log_router.NewLogRouter()
-	logRouter.Source = "https://hooks.torq.io/v1/webhooks/7b9ffae7-9867-44a9-8988-e02a7b282bbc/workflows/eb5539bb-0336-412d-b18a-04ceb86099ab/sync"
-	logRouter.Destination = "http://localhost:5080/api/flowstate/test_torq3/_json"
-	logRouter.Router()
+	// logRouter := log_router.NewLogRouter()
+	// logRouter.Source = "https://hooks.torq.io/v1/webhooks/7b9ffae7-9867-44a9-8988-e02a7b282bbc/workflows/eb5539bb-0336-412d-b18a-04ceb86099ab/sync"
+	// logRouter.Destination = "http://localhost:5080/api/flowstate/test_torq3/_json"
+	// logRouter.Router()
 
-	return
+	// return
 
 	// Start Redis Client
 
