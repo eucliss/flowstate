@@ -1,4 +1,4 @@
-package db
+package flowstate
 
 import (
 	redis "github.com/redis/go-redis/v9"
