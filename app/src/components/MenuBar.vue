@@ -15,9 +15,24 @@ const icons = shallowRef([
 
 const hoveredIcon = ref<number | null>(null)
 
-const handleClick = (id: number) => {
+const handleClick = async (id: number) => {
   activeIcon.value = id
   if (id === 1) {
+
+    // send a get request to the server to get the flow state
+    const query = {
+		Query:      "SELECT * FROM 'test_torq3'",
+		Limit:      2,
+		Start:      1738040675782000, // 10000 seconds ago
+		End:        1738041575782000,
+		SourceType: "flowstate",
+	}
+    const response = await  fetch('http://localhost:3000/query', {
+        method: 'POST',
+        body: JSON.stringify(query)
+    })
+    const data = await response.json()
+    console.log('Query response:', data)
     showDrawer.value = true
   } else if (id === 2) {
     emit('reset')

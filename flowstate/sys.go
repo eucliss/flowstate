@@ -30,10 +30,6 @@ func Start() *Flowstate {
 	return Fs
 }
 
-func (f *Flowstate) StartRouter() {
-
-}
-
 func (f *Flowstate) LoadState() {
 	f.Nodes = LoadNodes()
 	f.Edges = LoadEdges()

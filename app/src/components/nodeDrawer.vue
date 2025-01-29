@@ -1,17 +1,42 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
-const emit = defineEmits(['close', 'addNode'])
+const props = defineProps({
+  selectedNode: {
+    type: Object,
+    default: () => null
+  }
+})
+
+const emit = defineEmits(['close', 'addNode', 'updateNode'])
 const nodeName = ref('')
 const sqlQuery = ref('')
 
+// Watch for changes to selectedNode and update form
+watch(() => props.selectedNode, (newNode) => {
+  if (newNode) {
+    nodeName.value = newNode.name
+    sqlQuery.value = newNode.sqlQuery
+  } else {
+    nodeName.value = ''
+    sqlQuery.value = ''
+  }
+}, { immediate: true })
+
 const handleSubmit = () => {
-  console.log('AddNodeDrawer - Emitting with name:', nodeName.value, 'SQL:', sqlQuery.value)
   const nodeData = { 
     name: nodeName.value,
     sqlQuery: sqlQuery.value 
   }
-  emit('addNode', nodeData)
+  
+  if (props.selectedNode) {
+    // If editing existing node, emit update event
+    emit('updateNode', { ...props.selectedNode, ...nodeData })
+  } else {
+    // If creating new node, emit add event
+    emit('addNode', nodeData)
+  }
+  
   nodeName.value = ''
   sqlQuery.value = ''
   emit('close')
@@ -23,7 +48,7 @@ const handleSubmit = () => {
       <div class="side-drawer">
         <div class="drawer-content">
           <div class="drawer-header">
-            <h3>Add New Node</h3>
+            <h3>{{ props.selectedNode ? 'Edit Node' : 'Add New Node' }}</h3>
             <button class="close-button" @click="$emit('close')">×</button>
           </div>
           
@@ -74,7 +99,9 @@ const handleSubmit = () => {
           </div>
   
           <div class="drawer-footer">
-            <button class="btn-primary" @click="handleSubmit">Add Node</button>
+            <button class="btn-primary" @click="handleSubmit">
+              {{ props.selectedNode ? 'Update Node' : 'Add Node' }}
+            </button>
             <button class="btn-secondary" @click="$emit('close')">Cancel</button>
           </div>
         </div>
