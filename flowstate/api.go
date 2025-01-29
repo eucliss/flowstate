@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"flowstate/flowstate/monitor"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -27,14 +29,16 @@ func InitializeAPI() *chi.Mux {
 
 func AddRoutes(r *chi.Mux) {
 	r.Get("/status", handleGetStatus)
+	r.Get("/load-flow-state", handleLoadFlowState)
+	r.Get("/reset", handleReset)
+
+	r.Post("/query", handleQuery)
 	r.Post("/add-node", handleAddNode)
 	r.Post("/update-node", handleUpdateNode)
 	r.Post("/add-edge", handleAddEdge)
 	r.Post("/connect-edge", handleConnectEdge)
 	r.Post("/delete-edges", handleDeleteEdges)
 	r.Post("/delete-node", handleDeleteNode)
-	r.Get("/load-flow-state", handleLoadFlowState)
-	r.Get("/reset", handleReset)
 }
 
 func handleGetStatus(w http.ResponseWriter, req *http.Request) {
@@ -185,4 +189,21 @@ func handleReset(w http.ResponseWriter, req *http.Request) {
 		"message": "Flow state reset",
 		"status":  "success",
 	})
+}
+
+func handleQuery(w http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	var query monitor.Query
+	err := decoder.Decode(&query)
+	if err != nil {
+		panic(err)
+	}
+
+	openObserve := monitor.OpenObserve{
+		URL: "http://localhost:5080",
+	}
+	result := openObserve.Query(query)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }

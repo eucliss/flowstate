@@ -7,6 +7,7 @@ import SpecialNode from './components/SpecialNode.vue'
 import SpecialEdge from './components/SpecialEdge.vue'
 import Background from './components/Background.vue'
 import MenuBar from './components/MenuBar.vue'
+import sqlNode from './components/sqlNode.vue'
 
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
@@ -227,6 +228,9 @@ const handleAddNode = (nodeData: { name: string }) => {
   <p style="color: white; font-size: 60px; text-align: center; margin-top: 200px;" v-if="!ready">Loading...</p>
   <div class="base-flow-container" v-if="ready">
     <VueFlow :nodes="nodes" :edges="edges">
+      <template #node-sql-node="">
+        <sqlNode />
+      </template>
       
     </VueFlow>
     <MenuBar 
