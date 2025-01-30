@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, shallowRef, defineEmits } from 'vue'
-import PlusIcon from '../assets/Plus.svg?component'
-import ResetIcon from '../assets/Reset.svg?component'
+import { ref, shallowRef, defineEmits, inject, provide } from 'vue'
+import PlusIcon from '../assets/Plus.svg'
+import ResetIcon from '../assets/Reset.svg'
 import AddNodeDrawer from './AddNodeDrawer.vue'
 
-const emit = defineEmits(['addNode', 'reset'])
+const emit = defineEmits(['addNode', 'reset', 'close-drawer'])
+const selectedNode = ref(null)
+selectedNode.value = inject('selectedNode')
 const showDrawer = ref(false)
 const activeIcon = ref(null)
 
@@ -42,6 +44,7 @@ const handleClick = async (id: number) => {
 const closeDrawer = () => {
   showDrawer.value = false
   activeIcon.value = null
+  emit('close-drawer')
 }
 
 const handleAddNode = (nodeData: { name: string }) => {
@@ -75,9 +78,10 @@ const handleAddNode = (nodeData: { name: string }) => {
 
   <!-- Drawer -->
   <AddNodeDrawer 
-    v-if="showDrawer" 
+    v-if="showDrawer || selectedNode.value" 
     @close="closeDrawer"
     @addNode="handleAddNode" 
+    :selectedNode="selectedNode.value"
   />
 </template>
 

@@ -1,21 +1,109 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { nodeTypes } from '../functions'
+import type { Node } from '@vue-flow/core'
+import type { PropType } from 'vue'
+import Comparison from './comparison.vue'
+import type { ComparisonType } from '../functions'
 
 const emit = defineEmits(['close', 'addNode'])
+
 const nodeName = ref('')
 const sqlQuery = ref('')
+const type = ref(nodeTypes[0])
+const jsonData = ref('')
+const nodeType = ref('')
+const successRoute = ref<ComparisonType>({
+    leftValue: "",
+    rightValue: "",
+    operator: ""
+})
+const failureRoute = ref<ComparisonType>({
+    leftValue: "",
+    rightValue: "",
+    operator: ""
+})
+
+const successRouteValue = computed(() => successRoute.value)
+const failureRouteValue = computed(() => failureRoute.value)
+
+const props = defineProps({
+  selectedNode: {
+    type: Object as PropType<Node>,
+    required: false
+  }
+})
 
 const handleSubmit = () => {
   console.log('AddNodeDrawer - Emitting with name:', nodeName.value, 'SQL:', sqlQuery.value)
   const nodeData = { 
     name: nodeName.value,
-    sqlQuery: sqlQuery.value 
+    sql: sqlQuery.value,
+    type: type.value,
+    json: jsonData.value,
+    successRoute: successRoute.value,
+    failureRoute: failureRoute.value
   }
   emit('addNode', nodeData)
   nodeName.value = ''
   sqlQuery.value = ''
+  jsonData.value = ''
+  type.value = nodeTypes[0]
   emit('close')
 }
+
+const handleTest = async () => {
+  console.log('AddNodeDrawer - Testing JSON data:', sqlQuery.value)
+
+  const response = await fetch('http://localhost:3000/query', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+
+    body: JSON.stringify({
+      query: sqlQuery.value,
+      limit: 10,
+      start: 1738040675782000,
+      end: 1738041575782000,
+      sourceType: 'flowstate'
+    }),
+  })
+  const data = await response.json()
+  console.log('AddNodeDrawer - Test response:', data)
+  jsonData.value = JSON.stringify(data[0], null, 2)
+}
+
+if (props.selectedNode) {
+  console.log("selected node: ", props.selectedNode)
+  nodeName.value = props.selectedNode.data.label
+  sqlQuery.value = props.selectedNode.data.sql
+  type.value = props.selectedNode.type
+  jsonData.value = props.selectedNode.data.json
+  try {
+    successRoute.value = props.selectedNode.data.successRoute
+    failureRoute.value = props.selectedNode.data.failureRoute
+  } catch (error) {
+    console.error('Error parsing successRoute or failureRoute:', error)
+  }
+
+  
+  console.log('Selected node type:', type.value)
+  console.log('Full node data:', props.selectedNode)
+}
+console.log('Available nodeTypes:', nodeTypes)
+console.log('Current selected type:', type.value)
+
+const updateSuccessRoute = (value: ComparisonType) => {
+  successRoute.value = value
+  console.log('AddNodeDrawer - Updated successRoute:', successRoute.value)
+}
+
+const updateFailureRoute = (value: ComparisonType) => {
+  failureRoute.value = value
+  console.log('AddNodeDrawer - Updated failureRoute:', failureRoute.value)
+}
+
 </script>
 
 <template>
@@ -28,14 +116,29 @@ const handleSubmit = () => {
           </div>
           
           <div class="drawer-body">
-            <div class="input-group">
-              <label for="nodeName">Node Name</label>
-              <input 
-                id="nodeName"
-                v-model="nodeName" 
-                placeholder="Enter node name"
-                type="text"
-              />
+            <div class="input-row">
+              <div class="input-group">
+                <label for="nodeName">Node Name</label>
+                <input 
+                  id="nodeName"
+                  v-model="nodeName" 
+                  placeholder="Enter node name"
+                  type="text"
+                />
+              </div>
+
+              <div class="input-group">
+                <label for="nodeType">Type</label>
+                <select 
+                  id="nodeType"
+                  v-model="type"
+                  class="type-select"
+                >
+                  <option v-for="t in nodeTypes" :key="t" :value="t">
+                    {{ t }}
+                  </option>
+                </select>
+              </div>
             </div>
   
             <div class="input-group">
@@ -48,28 +151,35 @@ const handleSubmit = () => {
                 rows="1"
               ></textarea>
             </div>
-  
-            <div class="columns-container">
-              <div class="column">
-                <h4>Column 1</h4>
-                <div class="column-content">
-                  <!-- Column 1 content -->
-                </div>
+
+            <div class="input-group">
+              <div class="label-row">
+                <label for="jsonData">JSON Data</label>
+                <button class="test-button" @click="handleTest">
+                  <i class="fas fa-vial"></i>
+                  Test
+                </button>
               </div>
-              
-              <div class="column">
-                <h4>Column 2</h4>
-                <div class="column-content">
-                  <!-- Column 2 content -->
-                </div>
-              </div>
-              
-              <div class="column">
-                <h4>Column 3</h4>
-                <div class="column-content">
-                  <!-- Column 3 content -->
-                </div>
-              </div>
+              <textarea
+                id="jsonData"
+                v-model="jsonData"
+                placeholder="Enter JSON data"
+                class="json-input"
+                rows="6"
+              ></textarea>
+            </div>
+
+            <div class="input-group">
+              <label>Success Route</label>
+              <Comparison 
+                :value="successRouteValue"
+                @update:successRoute="updateSuccessRoute"
+              />
+              <label>Failure Route</label>
+              <Comparison 
+                :value="failureRouteValue"
+                @update:failureRoute="updateFailureRoute"
+              />
             </div>
           </div>
   
@@ -124,6 +234,17 @@ const handleSubmit = () => {
   flex-direction: column;
   overflow-y: auto;
   padding: 24px;
+}
+
+.input-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.input-row .input-group {
+  margin-bottom: 0;
+  flex: 1;
 }
 
 .input-group {
@@ -212,6 +333,30 @@ input::placeholder {
   color: #666;
 }
 
+.json-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 200px;
+  font-family: monospace;
+}
+
+.json-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.json-input::placeholder {
+  color: #666;
+}
+
 /* Footer styling */
 .drawer-footer {
   padding: 24px;
@@ -278,5 +423,85 @@ input::placeholder {
 .drawer-enter-from,
 .drawer-leave-to {
   transform: translateX(100%);
+}
+
+/* Add these new styles */
+.type-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.type-select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.type-select option {
+  background: #2d2d2d;
+  color: #fff;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.test-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.test-button:hover {
+  background: #404040;
+}
+
+.test-button i {
+  font-size: 0.9rem;
+}
+
+.comparison-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.comparison-select {
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.comparison-select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.comparison-input {
+  width: 120px;
 }
 </style> 

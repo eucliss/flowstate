@@ -39,6 +39,7 @@ func AddRoutes(r *chi.Mux) {
 	r.Post("/connect-edge", handleConnectEdge)
 	r.Post("/delete-edges", handleDeleteEdges)
 	r.Post("/delete-node", handleDeleteNode)
+	r.Get("/get-nodes", handleGetNodes)
 }
 
 func handleGetStatus(w http.ResponseWriter, req *http.Request) {
@@ -48,6 +49,12 @@ func handleGetStatus(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"status": "success",
 	})
+}
+
+func handleGetNodes(w http.ResponseWriter, req *http.Request) {
+	nodes := LoadNodes()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(nodes)
 }
 
 func handleAddNode(w http.ResponseWriter, req *http.Request) {
