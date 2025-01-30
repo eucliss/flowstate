@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, provide } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'  
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 
-import SpecialNode from './components/SpecialNode.vue'
-import SpecialEdge from './components/SpecialEdge.vue'
 import Background from './components/Background.vue'
+import CustomNode from './components/CustomNode.vue'
 import MenuBar from './components/MenuBar.vue'
-import sqlNode from './components/sqlNode.vue'
+import Sidebar from './components/Sidebar.vue'
+import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState } from './functions'
+import type { ComparisonType } from './functions'
 
-const nodes = ref<Node[]>([])
-const edges = ref<Edge[]>([])
+type CustomNodeTypes = 'custom' | 'special'
+
+type CustomNode = Node
+
 const ready = ref(false)
 
 const instance = useVueFlow()
@@ -24,33 +27,27 @@ const {
   onEdgeClick, 
   onEdgesChange,
   onNodeDragStop,
-  onConnect
+  onConnect,
+  onNodeClick
 } = instance
-
-// onEdgesChange((event) => {
-//   console.log("edges changed: ", event)
-// })
 
 onNodeDragStop(async (event) => { 
   console.log("node dragged: ", event)
-  const node = {
+  const updated_node = {
     id: event.node.id,
-    x: Math.floor(event.node.position.x),
-    y: Math.floor(event.node.position.y),
-    label: event.node.data.label,
+    position: {
+      x: Math.floor(event.node.position.x),
+      y: Math.floor(event.node.position.y),
+    },
+    data: {
+      label: event.node.data.label,
+      sql: event.node.data.sql,
+    },
     type: event.node.type,
   }
-  const response = await fetch("http://localhost:3000/update-node", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(node),
-  });
-  console.log("response: ", response)
-  const data = await response.json();
-  console.log('Data fetched:', data);
-  await loadFlowState()
+  nodes.value.push(updated_node)
+  await updateNode(updated_node)
+  await getFlowState()
 })
 
 onConnect(async (event) => {
@@ -61,103 +58,40 @@ onConnect(async (event) => {
     animated: true,
   }
   edges.value.push(new_edge)
-  // Connected a new edge
-  const response = await fetch("http://localhost:3000/connect-edge", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(new_edge),
-  });
-  console.log("response: ", response)
-  const data = await response.json();
-  console.log('Data fetched:', data);
-  console.log("connect: ", event)
-  await loadFlowState()
+  await connectEdge(new_edge)
+  await getFlowState()
 })
 
-// watch the stored nodes
-// watch(getNodes, (nodes) => console.log('nodes changed', nodes))
-// watch(getEdges, (edges) => console.log('edges changed watching', edges))
-
-const addNode  = async (nodeData: { name: string }) => {
-  console.log("adding a new node, len of nodes: ", nodes.value.length)
-  // const id = (nodes.value.length + 1).toString()
+const localAddNode  = async (nodeData: { name: string, sql: string, type: string, successRoute: ComparisonType, failureRoute: ComparisonType }) => {
+  console.log("Adding node: ", nodeData)
   const id = crypto.randomUUID()
-  const position = {
-    x: 0,
-    y: 100,
-  }
 
-  const node = {
-    id,
-    type: 'default',
-    position,
-    data: { label: nodeData.name },
-  }
-  nodes.value.push(node)
-
-  const goNode = {
-    id: node.id,
-    type: node.type,
-    x: node.position.x,
-    y: node.position.y,
-    label: nodeData.name,
-  }
-
-  // send post request to server to add node
-  const response = await fetch("http://localhost:3000/add-node", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  const new_node: Node = {
+    id: id,
+    type: nodeData.type,
+    position: {
+      x: 0,
+      y: 100,
     },
-    body: JSON.stringify(goNode),
-  });
-  console.log("response: ", response)
-  const data = await response.json();
-  console.log('Data fetched:', data);
-  await loadFlowState()
+    data: {
+      label: nodeData.name,
+      sql: nodeData.sql,
+      successRoute: nodeData.successRoute,
+      failureRoute: nodeData.failureRoute,
+    },
+  }
+  nodes.value.push(new_node)
+  console.log("Nodes: ", nodes.value)
+  await addNode(new_node)
+  await getFlowState()
 }
 
 function removeEdge(id) {
   edges.value = edges.value.filter((edge) => edge.id !== id)
 }
 
-async function loadFlowState() {
-  const response = await fetch("http://localhost:3000/load-flow-state", {
-    method: 'GET',
-  });
-  const data = await response.json();
-  console.log('Data fetched:', data);
-  const temp_nodes = []
-  for (const node of data.nodes) {
-    temp_nodes.push({
-      id: node.Id,
-      type: node.Type,
-      position: {
-        x: node.X,
-        y: node.Y,
-      },
-      data: {
-        label: node.Label,
-      },
-    })
-  }
-  const temp_edges = []
-  for (const edge of data.edges) {
-    temp_edges.push({
-      id: edge.Id,
-      source: edge.Source,
-      target: edge.Target,
-      animated: edge.Animated,
-    })
-  }
-  nodes.value = temp_nodes
-  edges.value = temp_edges
-}
-
 onMounted(async () => {
-  await loadFlowState()
+  await getFlowState()
   ready.value = true
   window.addEventListener('keydown', handleKeyDown)
 })
@@ -178,49 +112,47 @@ const handleKeyDown = async (event) => {
     },
     body: JSON.stringify(selected_node),
   });
-  console.log("response: ", response)
-  var data = await response.json();
-  console.log('Data fetched:', data);
+    console.log("response: ", response)
+    var data = await response.json();
+    console.log('Data fetched:', data);
 
-  response = await fetch("http://localhost:3000/delete-edges", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(connection_ids),
-  });
-  console.log("delete edges response: ", response)
-  data = await response.json();
-  console.log('delete edges data:', data);
+    response = await fetch("http://localhost:3000/delete-edges", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(connection_ids),
+    });
+    console.log("delete edges response: ", response)
+    data = await response.json();
+    console.log('delete edges data:', data);
+    await getFlowState()
   }
-  await loadFlowState()
-
 }
 
-const resetFlowState = async () => {
-  const response = await fetch("http://localhost:3000/reset", {
-    method: 'GET',
-  });
-  const data = await response.json();
-  console.log('Data fetched:', data);
-  await loadFlowState()
+const resetFlow = async () => {
+  await resetFlowState()
+  await getFlowState()
 }
 
-console.log("nodes: ", nodes.value)
-console.log("edges: ", edges.value)
-
-onEdgeClick((event) => {
-  console.log("edge clicked: ", event)
+const selectedNode = ref<Node | null>(null)
+onNodeClick((event) => {
+  selectedNode.value = null
+  selectedNode.value = event.node
+  console.log("selected node: ", selectedNode.value) 
 })
 
-onPaneReady((i) => i.fitView())
-
-const handleAddNode = (nodeData: { name: string }) => {
-  console.log('App - Received node data:', nodeData)
-  // Add your node creation logic here
-  addNode(nodeData)
+const closeDrawer = () => {
+  selectedNode.value = null
 }
 
+provide('selectedNode', selectedNode)
+
+// onEdgeClick((event) => {
+//   console.log("edge clicked: ", event)
+// })
+
+onPaneReady((i) => i.fitView())
 </script>
 
 <template>
@@ -228,14 +160,14 @@ const handleAddNode = (nodeData: { name: string }) => {
   <p style="color: white; font-size: 60px; text-align: center; margin-top: 200px;" v-if="!ready">Loading...</p>
   <div class="base-flow-container" v-if="ready">
     <VueFlow :nodes="nodes" :edges="edges">
-      <template #node-sql-node="">
-        <sqlNode />
-      </template>
-      
+      <template #node-custom="customNodeProps">
+        <CustomNode v-bind="customNodeProps" />
+      </template>      
     </VueFlow>
     <MenuBar 
-      @add-node="handleAddNode"
+      @add-node="localAddNode"
       @reset="resetFlowState"
+      @close-drawer="closeDrawer"
     />
   </div>
 </template>

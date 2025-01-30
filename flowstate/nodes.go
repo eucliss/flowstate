@@ -10,6 +10,7 @@ type Node struct {
 	X     int    `redis:"x"`
 	Y     int    `redis:"y"`
 	Label string `redis:"label"`
+	SQL   string `redis:"sql"`
 }
 
 func LoadNodes() []Node {
@@ -70,6 +71,7 @@ func AddStartingNodes() {
 			X:     250,
 			Y:     5,
 			Label: "Node 1",
+			SQL:   "SELECT * FROM 'test_torq3'",
 		},
 		{
 			Id:    "2",
@@ -77,6 +79,7 @@ func AddStartingNodes() {
 			X:     100,
 			Y:     100,
 			Label: "Node 2",
+			SQL:   "SELECT * FROM 'test_torq3'",
 		},
 		{
 			Id:    "3",
@@ -84,6 +87,7 @@ func AddStartingNodes() {
 			X:     400,
 			Y:     200,
 			Label: "Node 3",
+			SQL:   "SELECT * FROM 'test_torq3'",
 		},
 	}
 
