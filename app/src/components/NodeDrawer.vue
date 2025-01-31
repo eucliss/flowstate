@@ -4,15 +4,16 @@ import { nodeTypes } from '../functions'
 import type { Node } from '@vue-flow/core'
 import type { PropType } from 'vue'
 import Comparison from './Comparison.vue'
-import type { ComparisonType } from '../functions'
+import type { ComparisonType} from '../functions'
+import { addNode, updateNode } from '../functions'
 
-const emit = defineEmits(['close', 'addNode'])
-
+const emit = defineEmits(['closeDrawer'])
 const nodeName = ref('')
 const sqlQuery = ref('')
 const type = ref(nodeTypes[0])
 const jsonData = ref('')
 const nodeType = ref('')
+
 const successRoute = ref<ComparisonType>({
     leftValue: "",
     rightValue: "",
@@ -24,32 +25,73 @@ const failureRoute = ref<ComparisonType>({
     operator: ""
 })
 
-const successRouteValue = computed(() => successRoute.value)
-const failureRouteValue = computed(() => failureRoute.value)
-
 const props = defineProps({
   selectedNode: {
     type: Object as PropType<Node>,
     required: false
+  },
+  type: {
+    type: String,
+    required: false
   }
 })
 
+const addNewNode = () => {
+    console.log('AddNodeDrawer - Emitting with name:', nodeName.value, 'SQL:', sqlQuery.value)
+    console.log('AddNodeDrawer - Success route:', successRoute.value)
+    console.log('AddNodeDrawer - Failure route:', failureRoute.value)
+    const new_node: Node = {
+        id: crypto.randomUUID(),
+        type: type.value,
+        position: {
+            x: 0,
+            y: 100,
+        },
+        data: {
+            label: nodeName.value,
+            sql: sqlQuery.value,
+            successRoute: successRoute.value,
+            failureRoute: failureRoute.value,
+        },
+    }
+    addNode(new_node)
+    nodeName.value = ''
+    sqlQuery.value = ''
+    jsonData.value = ''
+    type.value = nodeTypes[0]
+    emit('closeDrawer')
+}
+const updateExistingNode = () => {
+    console.log('AddNodeDrawer - Emitting with name:', nodeName.value, 'SQL:', sqlQuery.value)
+    const updated_node: Node = {
+        id: props.selectedNode.id,
+        type: type.value,
+        position: {
+            x: props.selectedNode.position.x,
+            y: props.selectedNode.position.y,
+        },
+        data: {
+            label: nodeName.value,
+            sql: sqlQuery.value,
+            successRoute: successRoute.value,
+            failureRoute: failureRoute.value,
+        },
+    }
+    updateNode(updated_node)
+    nodeName.value = ''
+    sqlQuery.value = ''
+    jsonData.value = ''
+    type.value = nodeTypes[0]
+    emit('closeDrawer')
+}
+
 const handleSubmit = () => {
-  console.log('AddNodeDrawer - Emitting with name:', nodeName.value, 'SQL:', sqlQuery.value)
-  const nodeData = { 
-    name: nodeName.value,
-    sql: sqlQuery.value,
-    type: type.value,
-    json: jsonData.value,
-    successRoute: successRoute.value,
-    failureRoute: failureRoute.value
+  if (props.type === 'add') {
+    addNewNode()
+  } else {
+    updateExistingNode()
   }
-  emit('addNode', nodeData)
-  nodeName.value = ''
-  sqlQuery.value = ''
-  jsonData.value = ''
-  type.value = nodeTypes[0]
-  emit('close')
+
 }
 
 const handleTest = async () => {
@@ -74,7 +116,7 @@ const handleTest = async () => {
   jsonData.value = JSON.stringify(data[0], null, 2)
 }
 
-if (props.selectedNode || props.type === 'update') {
+if (props.selectedNode) {
   console.log("selected node: ", props.selectedNode)
   nodeName.value = props.selectedNode.data.label
   sqlQuery.value = props.selectedNode.data.sql
@@ -111,8 +153,8 @@ const updateFailureRoute = (value: ComparisonType) => {
       <div class="side-drawer">
         <div class="drawer-content">
           <div class="drawer-header">
-            <h3>Add New Node</h3>
-            <button class="close-button" @click="$emit('close')">×</button>
+            <h3>{{ props.type === 'add' ? 'Add New Node' : 'Update Node' }}</h3>
+            <button class="close-button" @click="$emit('closeDrawer')">×</button>
           </div>
           
           <div class="drawer-body">
@@ -171,21 +213,21 @@ const updateFailureRoute = (value: ComparisonType) => {
 
             <div class="input-group">
               <label>Success Route</label>
-              <Comparison 
-                :value="successRouteValue"
-                @update:successRoute="updateSuccessRoute"
+              <Comparison
+                :model-value="successRoute"
+                @update:model-value="updateSuccessRoute"
               />
               <label>Failure Route</label>
               <Comparison 
-                :value="failureRouteValue"
-                @update:failureRoute="updateFailureRoute"
+                :model-value="failureRoute"
+                @update:model-value="updateFailureRoute"
               />
             </div>
           </div>
   
           <div class="drawer-footer">
-            <button class="btn-primary" @click="handleSubmit">Add Node</button>
-            <button class="btn-secondary" @click="$emit('close')">Cancel</button>
+            <button class="btn-primary" @click="handleSubmit">{{ props.type === 'add' ? 'Add Node' : 'Update Node' }}</button>
+            <button class="btn-secondary" @click="$emit('closeDrawer')">Cancel</button>
           </div>
         </div>
       </div>

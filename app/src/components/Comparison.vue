@@ -1,37 +1,33 @@
 <script setup lang="ts">
-import { ref, type PropType } from 'vue'
+import { ref, type PropType, watch } from 'vue'
 import type { ComparisonType } from '../functions'
 
-const emit = defineEmits(['update:successRoute', 'update:failureRoute'])
+const emit = defineEmits(['update:modelValue'])
 
 const props = defineProps({
-    value: {
+    modelValue: {
         type: Object as PropType<ComparisonType>,
         required: false
     }
 })
 
-const firstInput = ref('')
-const selectedOption = ref('')
-const lastInput = ref('')
+const firstInput = ref(props.modelValue?.leftValue || '')
+const selectedOption = ref(props.modelValue?.operator || '')
+const lastInput = ref(props.modelValue?.rightValue || '')
 
 const options = ['Equals', 'Not Equals'] // Replace with your actual options
 
-const updateSuccessRoute = () => {
-    emit('update:successRoute', {
-        leftValue: firstInput.value,
-        rightValue: lastInput.value,
-        operator: selectedOption.value
-    })
-}
-
-const updateFailureRoute = () => {
-    emit('update:failureRoute', {
-        leftValue: firstInput.value,
-        rightValue: lastInput.value,
-        operator: selectedOption.value
-    })
-}
+watch(
+    [firstInput, selectedOption, lastInput],
+    ([left, operator, right]) => {
+        emit('update:modelValue', {
+            leftValue: left,
+            rightValue: right,
+            operator: operator
+        })
+    },
+    { immediate: true }
+)
 
 </script>
 

@@ -7,6 +7,7 @@ import Background from './components/Background.vue'
 import CustomNode from './components/CustomNode.vue'
 import MenuBar from './components/MenuBar.vue'
 import Sidebar from './components/Sidebar.vue'
+import NodeDrawer from './components/NodeDrawer.vue'
 import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState } from './functions'
 import type { ComparisonType } from './functions'
 
@@ -42,12 +43,13 @@ onNodeDragStop(async (event) => {
     data: {
       label: event.node.data.label,
       sql: event.node.data.sql,
+      successRoute: event.node.data.successRoute,
+      failureRoute: event.node.data.failureRoute,
     },
     type: event.node.type,
   }
   nodes.value.push(updated_node)
   await updateNode(updated_node)
-  await getFlowState()
 })
 
 onConnect(async (event) => {
@@ -59,7 +61,6 @@ onConnect(async (event) => {
   }
   edges.value.push(new_edge)
   await connectEdge(new_edge)
-  await getFlowState()
 })
 
 const localAddNode  = async (nodeData: { name: string, sql: string, type: string, successRoute: ComparisonType, failureRoute: ComparisonType }) => {
@@ -92,6 +93,8 @@ function removeEdge(id) {
 
 onMounted(async () => {
   await getFlowState()
+  console.log("nodes", nodes.value)
+  console.log("edges", edges.value)
   ready.value = true
   window.addEventListener('keydown', handleKeyDown)
 })
@@ -105,6 +108,7 @@ const handleKeyDown = async (event) => {
   const connections = getConnectedEdges(selected_node)
   const connection_ids = connections.map((edge) => edge.id)
   if (event.keyCode === 46 || event.keyCode === 8) {
+    onPaneClick() // Close drawer
     var response = await fetch("http://localhost:3000/delete-node", {
     method: 'POST',
     headers: {
@@ -123,9 +127,7 @@ const handleKeyDown = async (event) => {
       },
       body: JSON.stringify(connection_ids),
     });
-    console.log("delete edges response: ", response)
     data = await response.json();
-    console.log('delete edges data:', data);
     await getFlowState()
   }
 }
@@ -135,22 +137,23 @@ const resetFlow = async () => {
   await getFlowState()
 }
 
+
 const selectedNode = ref<Node | null>(null)
+const drawerOpen = ref(false)
 onNodeClick((event) => {
   selectedNode.value = null
   selectedNode.value = event.node
+  drawerOpen.value = true  // Open drawer when clicking on a node
   console.log("selected node: ", selectedNode.value) 
 })
 
-const closeDrawer = () => {
+// Add click handler for the vue-flow pane
+const onPaneClick = () => {
+  drawerOpen.value = false  // Close drawer when clicking on the pane
   selectedNode.value = null
 }
 
 provide('selectedNode', selectedNode)
-
-// onEdgeClick((event) => {
-//   console.log("edge clicked: ", event)
-// })
 
 onPaneReady((i) => i.fitView())
 </script>
@@ -159,7 +162,11 @@ onPaneReady((i) => i.fitView())
   <Background />
   <p style="color: white; font-size: 60px; text-align: center; margin-top: 200px;" v-if="!ready">Loading...</p>
   <div class="base-flow-container" v-if="ready">
-    <VueFlow :nodes="nodes" :edges="edges">
+    <VueFlow 
+      :nodes="nodes" 
+      :edges="edges"
+      @paneClick="onPaneClick"
+    >
       <template #node-custom="customNodeProps">
         <CustomNode v-bind="customNodeProps" />
       </template>      
@@ -167,7 +174,12 @@ onPaneReady((i) => i.fitView())
     <MenuBar 
       @add-node="localAddNode"
       @reset="resetFlowState"
-      @close-drawer="closeDrawer"
+    />
+    <NodeDrawer 
+      v-if="drawerOpen"
+      @closeDrawer="drawerOpen = false"
+      :selectedNode="selectedNode"
+      type="update"
     />
   </div>
 </template>

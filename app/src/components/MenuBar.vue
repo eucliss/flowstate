@@ -2,11 +2,10 @@
 import { ref, shallowRef, defineEmits, inject, provide } from 'vue'
 import PlusIcon from '../assets/Plus.svg'
 import ResetIcon from '../assets/Reset.svg'
-import AddNodeDrawer from './AddNodeDrawer.vue'
+import NodeDrawer from './NodeDrawer.vue'
 
 const emit = defineEmits(['addNode', 'reset', 'close-drawer'])
 const selectedNode = ref(null)
-selectedNode.value = inject('selectedNode')
 const showDrawer = ref(false)
 const activeIcon = ref(null)
 
@@ -76,13 +75,20 @@ const handleAddNode = (nodeData: { name: string }) => {
     </div>
   </div>
 
-  <!-- Drawer -->
-  <AddNodeDrawer 
-    v-if="showDrawer || selectedNode.value" 
-    @close="closeDrawer"
-    @addNode="handleAddNode" 
-    :selectedNode="selectedNode.value"
-  />
+  <!-- Overlay and Drawer -->
+  <div 
+    v-if="showDrawer"
+    class="drawer-overlay"
+    @click="closeDrawer"
+    @click.stop
+  >
+    <NodeDrawer 
+      @closeDrawer="closeDrawer"
+      @addNode="handleAddNode" 
+      @click.stop
+      type="add"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -189,4 +195,15 @@ const handleAddNode = (nodeData: { name: string }) => {
   height: 26px;
 }
 
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1000;
+}
 </style>

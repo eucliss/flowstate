@@ -2,9 +2,13 @@ package flowstate
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 
 	"flowstate/flowstate/monitor"
+
+	"errors"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -42,6 +46,32 @@ func AddRoutes(r *chi.Mux) {
 	r.Get("/get-nodes", handleGetNodes)
 }
 
+func ParseNodeFromRequest(req *http.Request) (Node, error) {
+	if req.Body == nil {
+		return Node{}, errors.New("request body is empty")
+	}
+
+	// Read the entire body
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return Node{}, errors.New("Error reading request body: " + err.Error())
+	}
+
+	// Log the raw body for debugging
+	fmt.Printf("Raw request body: %s\n", string(body))
+
+	// Create a new Node instance
+	var node Node
+	if err := json.Unmarshal(body, &node); err != nil {
+		return Node{}, errors.New("Error parsing JSON: " + err.Error())
+	}
+
+	// Log the parsed node
+	fmt.Printf("Parsed node: %+v\n", node)
+
+	return node, nil
+}
+
 func handleGetStatus(w http.ResponseWriter, req *http.Request) {
 	// Set JSON content type
 	w.Header().Set("Content-Type", "application/json")
@@ -58,17 +88,17 @@ func handleGetNodes(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleAddNode(w http.ResponseWriter, req *http.Request) {
-	decoder := json.NewDecoder(req.Body)
-
-	var node Node
-	err := decoder.Decode(&node)
+	// Check if the request body is nil
+	node, err := ParseNodeFromRequest(req)
 	if err != nil {
-		panic(err)
+		http.Error(w, "Error parsing node: "+err.Error(), http.StatusBadRequest)
+		return
 	}
+	fmt.Println("node", node)
 
-	err = AddNode(node)
-	if err != nil {
-		panic(err)
+	if err := AddNode(node); err != nil {
+		http.Error(w, "Error adding node: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -76,16 +106,15 @@ func handleAddNode(w http.ResponseWriter, req *http.Request) {
 		"message": "Node added",
 		"status":  "success",
 	})
-
 }
 
 func handleUpdateNode(w http.ResponseWriter, req *http.Request) {
-	decoder := json.NewDecoder(req.Body)
-	var node Node
-	err := decoder.Decode(&node)
+	node, err := ParseNodeFromRequest(req)
 	if err != nil {
-		panic(err)
+		http.Error(w, "Error parsing node: "+err.Error(), http.StatusBadRequest)
+		return
 	}
+	fmt.Println("node", node)
 
 	err = UpdateNode(node)
 	if err != nil {

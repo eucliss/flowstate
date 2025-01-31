@@ -28,6 +28,7 @@ func main() {
 	// })
 
 	fs := flowstate.Start()
+	// fs.Reset()
 
 	http.ListenAndServe(":3000", fs.Router)
 }

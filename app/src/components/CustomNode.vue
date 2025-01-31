@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { NodeProps } from '@vue-flow/core'  
 import { Position, Handle } from '@vue-flow/core'
-
 // props were passed from the slot using `v-bind="customNodeProps"`
 const props = defineProps<NodeProps>()
   
@@ -10,9 +9,9 @@ console.log(props.id) // 'world'
 
 <template>
   <div>
-    <Handle type="target" :position="Position.Top" />
+    <Handle type="target" :position="Position.Top" :connectable="true" />
     <div>{{ props.data.label }}</div>
-    <Handle type="source" :position="Position.Bottom" />
+    <Handle type="source" :position="Position.Bottom" :connectable="true" />
   </div>
 </template>
 
@@ -31,5 +30,4 @@ console.log(props.id) // 'world'
   box-shadow: 0 0 0 1px red;
   padding: 8px;
 }
-
 </style>

@@ -38,21 +38,42 @@ export const convertNodetoGoNode = (node: Node) => {
         y: node.position.y,
         label: node.data.label,
         sql: node.data.sql,
+        successRoute: {
+            leftValue: node.data.successRoute.leftValue,
+            rightValue: node.data.successRoute.rightValue,
+            operator: node.data.successRoute.operator,
+        },
+        failureRoute: {
+            leftValue: node.data.failureRoute.leftValue,
+            rightValue: node.data.failureRoute.rightValue,
+            operator: node.data.failureRoute.operator,
+        },
     }
 }
 
-export const convertGoNodeToNode = (n: { Id: string, Type: string, X: number, Y: number, Label: string, SQL: string }) => {
+export const convertGoNodeToNode = (n: { 
+    Id: string, 
+    Type: string, 
+    X: number, 
+    Y: number, 
+    Label: string, 
+    SQL: string,
+    SuccessRoute: ComparisonType,
+    FailureRoute: ComparisonType,
+}) => {
     console.log("Converting Go node to node: ", n)
     return {
-        id: n["Id"],
-        type: n["Type"],
+        id: n["id"],
+        type: n["type"],
         position: {
-            x: n["X"],
-            y: n["Y"],
+            x: n["x"],
+            y: n["y"],
         },
         data: {
-            label: n["Label"],
-            sql: n["SQL"],
+            label: n["label"],
+            sql: n["sql"],
+            successRoute: n["successRoute"],
+            failureRoute: n["failureRoute"],
         },
     }
 }
@@ -90,6 +111,10 @@ export const getFlowState = async () => {
 }
 
 export const updateNode = async (node: Node) => {
+    console.log("Updating node: ", node)
+    nodes.value = nodes.value.map(n => 
+        n.id === node.id ? { ...node } : n
+    )
     const response = await fetch(`${URL}/update-node`, {
         method: 'POST',
         headers: {
@@ -103,6 +128,7 @@ export const updateNode = async (node: Node) => {
 
 export const addNode = async (node: Node) => {
     const goNode = convertNodetoGoNode(node)
+    nodes.value.push(node)
     console.log("Adding node to Go: ", goNode)
     const response = await fetch(`${URL}/add-node`, {
         method: 'POST',
