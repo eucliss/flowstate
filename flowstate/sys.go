@@ -1,6 +1,8 @@
 package flowstate
 
 import (
+	"flowstate/flowstate/monitor"
+
 	"github.com/go-chi/chi/v5"
 	redis "github.com/redis/go-redis/v9"
 )
@@ -12,6 +14,7 @@ type Flowstate struct {
 	Edges    []Edge
 	DbClient *redis.Client
 	Router   *chi.Mux
+	LogStore *monitor.OpenObserve
 }
 
 func Start() *Flowstate {
@@ -27,6 +30,9 @@ func Start() *Flowstate {
 		Router:   router,
 	}
 	Fs.LoadState()
+	Fs.LogStore = &monitor.OpenObserve{
+		URL: "http://localhost:5080",
+	}
 	return Fs
 }
 

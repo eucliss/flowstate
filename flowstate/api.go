@@ -35,6 +35,9 @@ func AddRoutes(r *chi.Mux) {
 	r.Get("/status", handleGetStatus)
 	r.Get("/load-flow-state", handleLoadFlowState)
 	r.Get("/reset", handleReset)
+	r.Get("/get-node", handleGetNode)
+	r.Get("/get-nodes", handleGetNodes)
+	r.Post("/node-route-status", handleNodeRouteStatus)
 
 	r.Post("/query", handleQuery)
 	r.Post("/add-node", handleAddNode)
@@ -43,7 +46,7 @@ func AddRoutes(r *chi.Mux) {
 	r.Post("/connect-edge", handleConnectEdge)
 	r.Post("/delete-edges", handleDeleteEdges)
 	r.Post("/delete-node", handleDeleteNode)
-	r.Get("/get-nodes", handleGetNodes)
+
 }
 
 func ParseNodeFromRequest(req *http.Request) (Node, error) {
@@ -106,6 +109,35 @@ func handleAddNode(w http.ResponseWriter, req *http.Request) {
 		"message": "Node added",
 		"status":  "success",
 	})
+}
+
+func handleGetNode(w http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	var v map[string]string
+	err := decoder.Decode(&v)
+	if err != nil {
+		panic(err)
+	}
+	id := v["id"]
+
+	node := GetNode(id)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(node)
+}
+
+func handleNodeRouteStatus(w http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	var v map[string]interface{}
+	err := decoder.Decode(&v)
+	if err != nil {
+		panic(err)
+	}
+	id := v["id"].(string)
+	route := v["route"].(string)
+
+	response := QueryRouteStatus(id, route)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func handleUpdateNode(w http.ResponseWriter, req *http.Request) {
@@ -235,10 +267,7 @@ func handleQuery(w http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	openObserve := monitor.OpenObserve{
-		URL: "http://localhost:5080",
-	}
-	result := openObserve.Query(query)
+	result := Fs.LogStore.Query(query)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)

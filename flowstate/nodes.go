@@ -3,6 +3,7 @@ package flowstate
 import (
 	"context"
 	"encoding/json"
+	"flowstate/flowstate/monitor"
 	"fmt"
 	"strconv"
 )
@@ -30,6 +31,88 @@ func (c *ComparisonType) MarshalBinary() ([]byte, error) {
 
 func (c *ComparisonType) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, c)
+}
+
+func convertRedisDataToNode(data map[string]string) Node {
+	// Create the node with basic fields
+	node := Node{
+		Id:    data["id"],
+		Type:  data["type"],
+		Label: data["label"],
+		SQL:   data["sql"],
+	}
+
+	// Parse position
+	if x, err := strconv.Atoi(data["x"]); err == nil {
+		node.X = x
+	}
+	if y, err := strconv.Atoi(data["y"]); err == nil {
+		node.Y = y
+	}
+
+	// Parse routes if they exist
+	if data["successRoute"] != "" {
+		var successRoute ComparisonType
+		if err := json.Unmarshal([]byte(data["successRoute"]), &successRoute); err == nil {
+			node.SuccessRoute = &successRoute
+		}
+	}
+
+	if data["failureRoute"] != "" {
+		var failureRoute ComparisonType
+		if err := json.Unmarshal([]byte(data["failureRoute"]), &failureRoute); err == nil {
+			node.FailureRoute = &failureRoute
+		}
+	}
+	return node
+}
+
+func GetNode(id string) Node {
+	ctx := context.Background()
+	result := Fs.DbClient.HGetAll(ctx, "node:"+id)
+	node := convertRedisDataToNode(result.Val())
+	return node
+}
+
+func checkRouteEquality(l string, r string, operator string) bool {
+	if operator == "Equals" {
+		return l == r
+	}
+	return l != r
+}
+
+func getRouteFromNode(node Node, route string) *ComparisonType {
+	if route == "success" {
+		return node.SuccessRoute
+	}
+	return node.FailureRoute
+}
+
+func QueryRouteStatus(node_id string, route string) bool {
+	node := GetNode(node_id)
+	query := node.SQL
+	storeQuery := monitor.Query{
+		Query:      query,
+		Start:      1738040675782000,
+		End:        1738041575782000,
+		Limit:      1,
+		SourceType: "flowstate",
+	}
+	fmt.Printf("Querying route status for node %s with query %s\n", node_id, query)
+	results := Fs.LogStore.Query(storeQuery)
+	lastResult := results[0].(map[string]interface{})
+
+	r := getRouteFromNode(node, route)
+	leftVal, leftOk := lastResult[r.LeftValue].(string)
+	fmt.Println("leftVal ========================", leftVal)
+	fmt.Println("rightVal ========================", r.RightValue)
+	fmt.Println("operator ========================", r.Operator)
+
+	if !leftOk {
+		fmt.Printf("Warning: Could not find values for comparison: left=%v, right=%v\n", r.LeftValue, r.RightValue)
+		return false
+	}
+	return checkRouteEquality(leftVal, r.RightValue, r.Operator)
 }
 
 func LoadNodes() []Node {

@@ -17,6 +17,7 @@ export type NodeData = {
     sql: string
     successRoute: ComparisonType
     failureRoute: ComparisonType
+    status: boolean
 }
 
 export type EdgeData = {
@@ -98,6 +99,32 @@ export const convertEdgeToGoEdge = (e: Edge) => {
     }
 }
 
+export const getNodeStatus = async (node: Node) => {
+    const response = await fetch(`${URL}/node-route-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            id: node.id,
+            route: "success",
+        }),
+    })
+    const data = await response.json()
+    console.log("Node status: ", data)
+    return data
+}
+
+export const updateAllNodesStatus = async () => {
+    nodes.value.forEach(async (node) => {
+        if (node.type === "custom") {
+            const status = await getNodeStatus(node)
+            node.data.status = status
+        }
+    })
+    console.log("All nodes status updated: ", nodes.value)
+}
+
 export const getFlowState = async () => {
     console.log("Loading flow state ... ")
     const response = await fetch(`${URL}/load-flow-state`, {
@@ -107,6 +134,7 @@ export const getFlowState = async () => {
 
     nodes.value = data.nodes.map(convertGoNodeToNode)
     edges.value = data.edges.map(convertGoEdgeToEdge)
+    await updateAllNodesStatus()
     console.log("Flow state loaded: ", nodes)
 }
 

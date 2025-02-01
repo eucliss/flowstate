@@ -8,7 +8,7 @@ import CustomNode from './components/CustomNode.vue'
 import MenuBar from './components/MenuBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import NodeDrawer from './components/NodeDrawer.vue'
-import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState } from './functions'
+import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState, updateAllNodesStatus } from './functions'
 import type { ComparisonType } from './functions'
 
 type CustomNodeTypes = 'custom' | 'special'
@@ -95,8 +95,12 @@ onMounted(async () => {
   await getFlowState()
   console.log("nodes", nodes.value)
   console.log("edges", edges.value)
+  await updateAllNodesStatus()
   ready.value = true
   window.addEventListener('keydown', handleKeyDown)
+  const i = setInterval(async () => {
+    await updateAllNodesStatus()
+  }, 5000)
 })
 
 const handleKeyDown = async (event) => {
