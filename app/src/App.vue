@@ -3,15 +3,13 @@ import { ref, watch, onMounted, provide } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'  
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Controls } from '@vue-flow/controls'
-
 import Background from './components/Background.vue'
-import QueryNode from './components/QueryNode.vue'
+import QueryNode from './components/nodes/QueryNode.vue'
 import MenuBar from './components/MenuBar.vue'
-import Sidebar from './components/Sidebar.vue'
 import NodeDrawer from './components/NodeDrawer.vue'
 import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState, updateAllNodesStatus, handleEdgeKeyDown, handleNodeKeyDown} from './functions'
 import type { ComparisonType, globalCustomNodeTypes, globalCustomNode } from './functions'
-import CountNode from './components/CountNode.vue'
+import CountNode from './components/nodes/CountNode.vue'
 
 
 type CustomNodeTypes = globalCustomNodeTypes
@@ -110,12 +108,18 @@ onMounted(async () => {
   await updateAllNodesStatus()
   ready.value = true
   window.addEventListener('keydown', handleKeyDown)
-  // const i = setInterval(async () => {
-  //   await updateAllNodesStatus()
-  // }, 5000)
+  const i = setInterval(async () => {
+    await updateAllNodesStatus()
+  }, 5000)
 })
 
 const handleKeyDown = async (event) => {
+  // Ignore delete/backspace if we're in a text input/textarea
+  if ((event.key === 'Delete' || event.key === 'Backspace') && 
+      (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA')) {
+    return;
+  }
+
   console.log("handleKeyDown pressed")
   console.log("key pressed: ", event.keyCode)
   console.log("selected edges: ", getSelectedEdges.value)
@@ -126,6 +130,9 @@ const handleKeyDown = async (event) => {
   if(getSelectedNodes.value.length > 0) {
     const connections = getConnectedEdges(getSelectedNodes.value[0].id)
     await handleNodeKeyDown(event, getSelectedNodes.value, connections)
+    if (event.key == 'Delete' || event.key == 'Backspace') {
+      onPaneClick()
+    }
   }
 }
 
@@ -247,4 +254,4 @@ onPaneReady((i) => i.fitView())
         <!-- bind your custom edge type to a component by using slots, slot names are always `edge-<type>` -->
         <!-- <template #edge-special="specialEdgeProps">
           <SpecialEdge v-bind="specialEdgeProps" />
-        </template> --> -->
+        </template> -->

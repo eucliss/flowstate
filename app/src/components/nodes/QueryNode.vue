@@ -2,7 +2,7 @@
 import type { NodeProps } from '@vue-flow/core'  
 import { Position, Handle } from '@vue-flow/core'
 import { computed } from 'vue'
-import { getNodeStatus } from '../functions'
+import { getNodeStatus } from '../../functions'
 
 // props were passed from the slot using `v-bind="customNodeProps"`
 const props = defineProps<NodeProps>()
@@ -42,13 +42,24 @@ const status = computed(() => props.data.status)
   z-index: 1;
   min-width: 150px;
   min-height: 40px;
-  height: 60px;
+  height: auto;
   width: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid white;
   border-radius: 4px;
+  padding: 8px;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.vue-flow__node-success div,
+.vue-flow__node-failed div {
+  width: 100%;
+  text-align: center;
+  font-size: 0.9em;
+  line-height: 1.2;
 }
 
 .vue-flow__node-success {

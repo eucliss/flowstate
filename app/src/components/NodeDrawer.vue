@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { nodeTypes } from '../functions'
+import { nodeTypes, nodeTypesMap } from '../functions'
 import type { Node } from '@vue-flow/core'
 import type { PropType } from 'vue'
 import Comparison from './Comparison.vue'
 import type { ComparisonType} from '../functions'
 import { addNode, updateNode } from '../functions'
-
+import QueryDrawer from './drawers/QueryDrawer.vue'
+import CountDrawer from './drawers/CountDrawer.vue'
 const emit = defineEmits(['closeDrawer'])
+
 const nodeName = ref('')
 const sqlQuery = ref('')
 const type = ref(nodeTypes[0])
@@ -96,26 +98,8 @@ const handleSubmit = () => {
 
 }
 
-const handleTest = async () => {
-  console.log('AddNodeDrawer - Testing JSON data:', sqlQuery.value)
-
-  const response = await fetch('http://localhost:3000/query', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-
-    body: JSON.stringify({
-      query: sqlQuery.value,
-      limit: 10,
-      start: 1738040675782000,
-      end: 1738041575782000,
-      sourceType: 'flowstate'
-    }),
-  })
-  const data = await response.json()
-  console.log('AddNodeDrawer - Test response:', data)
-  jsonData.value = JSON.stringify(data[0], null, 2)
+const updateSqlQuery = (newValue: string) => {
+  sqlQuery.value = newValue
 }
 
 if (props.selectedNode) {
@@ -156,6 +140,7 @@ const updateFailureRoute = (value: ComparisonType) => {
     <Transition name="drawer">
       <div class="side-drawer">
         <div class="drawer-content">
+            
           <div class="drawer-header">
             <h3>{{ props.type === 'add' ? 'Add New Node' : 'Update Node' }}</h3>
             <button class="close-button" @click="$emit('closeDrawer')">×</button>
@@ -181,52 +166,27 @@ const updateFailureRoute = (value: ComparisonType) => {
                   class="type-select"
                 >
                   <option v-for="t in nodeTypes" :key="t" :value="t">
-                    {{ t }}
+                    {{ nodeTypesMap[t] }}
                   </option>
                 </select>
               </div>
             </div>
   
-            <div class="input-group">
-              <label for="sqlQuery">SQL Query</label>
-              <textarea
-                id="sqlQuery"
-                v-model="sqlQuery"
-                placeholder="Enter SQL query"
-                class="sql-input"
-                rows="1"
-              ></textarea>
-            </div>
+            <QueryDrawer
+                v-if="type === 'queryNode'"
+                :query="sqlQuery" 
+                :successRoute="successRoute" 
+                :failureRoute="failureRoute"
+                @update:query="updateSqlQuery"
+                @update:successRoute="updateSuccessRoute"
+                @update:failureRoute="updateFailureRoute"
+            />
+            <CountDrawer
+                v-if="type === 'countNode'"
+                :query="sqlQuery" 
+                @update:query="updateSqlQuery"
+            />
 
-            <div class="input-group">
-              <div class="label-row">
-                <label for="jsonData">JSON Data</label>
-                <button class="test-button" @click="handleTest">
-                  <i class="fas fa-vial"></i>
-                  Test
-                </button>
-              </div>
-              <textarea
-                id="jsonData"
-                v-model="jsonData"
-                placeholder="Enter JSON data"
-                class="json-input"
-                rows="6"
-              ></textarea>
-            </div>
-
-            <div class="input-group">
-              <label>Success Route</label>
-              <Comparison
-                :model-value="successRoute"
-                @update:model-value="updateSuccessRoute"
-              />
-              <label>Failure Route</label>
-              <Comparison 
-                :model-value="failureRoute"
-                @update:model-value="updateFailureRoute"
-              />
-            </div>
           </div>
   
           <div class="drawer-footer">
@@ -281,128 +241,6 @@ const updateFailureRoute = (value: ComparisonType) => {
   overflow-y: auto;
   padding: 24px;
 }
-
-.input-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.input-row .input-group {
-  margin-bottom: 0;
-  flex: 1;
-}
-
-.input-group {
-  margin-bottom: 24px;
-}
-
-.columns-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  flex: 1;
-  min-height: 0;
-}
-
-.column {
-  background: #2d2d2d;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid #404040;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.column h4 {
-  color: #fff;
-  margin: 0 0 16px 0;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.column-content {
-  flex: 1;
-}
-
-/* Input styling */
-.input-group label {
-  display: block;
-  color: #999;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-}
-
-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-input:focus {
-  outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-}
-
-input::placeholder {
-  color: #666;
-}
-
-.sql-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  resize: vertical;
-  min-height: 150px;
-  font-family: monospace;
-}
-
-.sql-input:focus {
-  outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-}
-
-.sql-input::placeholder {
-  color: #666;
-}
-
-.json-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  resize: vertical;
-  min-height: 200px;
-  font-family: monospace;
-}
-
-.json-input:focus {
-  outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-}
-
-.json-input::placeholder {
-  color: #666;
-}
-
 /* Footer styling */
 .drawer-footer {
   padding: 24px;
@@ -502,28 +340,6 @@ input::placeholder {
   margin-bottom: 8px;
 }
 
-.test-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.test-button:hover {
-  background: #404040;
-}
-
-.test-button i {
-  font-size: 0.9rem;
-}
-
 .comparison-container {
   display: flex;
   gap: 12px;
@@ -550,4 +366,156 @@ input::placeholder {
 .comparison-input {
   width: 120px;
 }
+
+
+.sql-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 150px;
+  font-family: monospace;
+}
+
+.sql-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.sql-input::placeholder {
+  color: #666;
+}
+
+.input-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.input-row .input-group {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.input-group {
+  margin-bottom: 24px;
+}
+
+.columns-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.column {
+  background: #2d2d2d;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #404040;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.column h4 {
+  color: #fff;
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.column-content {
+  flex: 1;
+}
+
+/* Input styling */
+.input-group label {
+  display: block;
+  color: #999;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+input::placeholder {
+  color: #666;
+}
+.json-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 200px;
+  font-family: monospace;
+}
+
+.json-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.json-input::placeholder {
+  color: #666;
+}
+
+
+.test-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.test-button:hover {
+  background: #404040;
+}
+
+.test-button i {
+  font-size: 0.9rem;
+}
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+
 </style> 
