@@ -2,7 +2,7 @@
 import type { NodeProps } from '@vue-flow/core'  
 import { Position, Handle } from '@vue-flow/core'
 import { computed } from 'vue'
-import { getNodeStatus } from '../functions'
+import { getNodeStatus } from '../../functions'
 import { ref } from 'vue'
 // props were passed from the slot using `v-bind="customNodeProps"`
 const props = defineProps<NodeProps>()
@@ -10,8 +10,10 @@ const emit = defineEmits(['updateNodeInternals'])
 const haveHandles = ref(false)
 
 // Replace ref and onMounted with a computed property
-const count = ref(0)
-count.value = 20
+const count = computed(() => {
+    return props.data.count
+})
+
 
 </script>
 

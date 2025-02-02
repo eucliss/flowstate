@@ -6,7 +6,7 @@ export const URL = 'http://localhost:3000'
 
 export const nodeTypes = ['default', 'queryNode', 'countNode']
 export const nodeTypesMap = {
-    'default': 'Default',
+    'default': 'Text',
     'queryNode': 'Query',
     'countNode': 'Count',
 }
@@ -191,8 +191,17 @@ export const updateAllNodesStatus = async () => {
             const status = await getNodeStatus(node)
             node.data.status = status
         }
+        if (node.type === "countNode") {
+            const count = await getCount(node.data.sql)
+            node.data.count = count
+        }
     })
     console.log("All nodes status updated: ", nodes.value)
+}
+
+export const getCount = async (query: string) => {
+    const data = await handleQueryTest(query)
+    return data.length
 }
 
 export const getFlowState = async () => {
@@ -259,6 +268,27 @@ export const resetFlowState = async () => {
     const data = await response.json()
     return data
 }
+
+export const handleQueryTest = async (query: string) => {
+  
+    const response = await fetch('http://localhost:3000/query', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+  
+      body: JSON.stringify({
+        query: query,
+        limit: 10,
+        start: 1738040675782000,
+        end: 1738041575782000,
+        sourceType: 'flowstate'
+      }),
+    })
+    const data = await response.json()
+    console.log('AddNodeDrawer - Test response:', data)
+    return data
+  }
 
 export const testing = () => {
     console.log('testing')
