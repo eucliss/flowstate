@@ -4,7 +4,15 @@ export const URL = 'http://localhost:3000'
 
 // SELECT * FROM 'test_torq3'
 
-export const nodeTypes = ['default', 'custom']
+export const nodeTypes = ['default', 'queryNode', 'countNode']
+export const nodeTypesMap = {
+    'default': 'Default',
+    'queryNode': 'Query',
+    'countNode': 'Count',
+}
+export type globalCustomNodeTypes = 'queryNode' | 'countNode'
+export type globalCustomNode = Node
+export const edgeTypes = ['smoothstep']
 
 export type ComparisonType = {
     leftValue: string
@@ -18,6 +26,7 @@ export type NodeData = {
     successRoute: ComparisonType
     failureRoute: ComparisonType
     status: boolean
+    count: number
 }
 
 export type EdgeData = {
@@ -29,6 +38,61 @@ export type EdgeData = {
 
 export const nodes = ref<Node[]>([])
 export const edges = ref<Edge[]>([])
+
+export const handleEdgeKeyDown = async (event: KeyboardEvent, selectedEdges: Edge[]) => {
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+        for (const e of selectedEdges) {
+            await deleteEdge(e)
+        }
+        await getFlowState()
+    }
+}
+
+export const handleNodeKeyDown = async (event: KeyboardEvent, selectedNodes: Node[], connectedEdges: Edge[]) => {
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+        for (const n of selectedNodes) {
+            await deleteNode(n, connectedEdges)
+        }
+        await getFlowState()
+    }
+}
+
+export const deleteEdge = async (edge: Edge) => {
+    edges.value = edges.value.filter(e => e.id !== edge.id)
+    console.log("Deleted edge: ", edge)
+    const response = await fetch(`${URL}/delete-edges`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([edge.id]),
+    })
+    const data = await response.json()
+    return data
+}
+
+export const deleteNode = async (n: Node, connections: Edge[]) => {
+    const selected_node = n.id
+    const connection_ids = connections.map((edge) => edge.id)
+    var response = await fetch("http://localhost:3000/delete-node", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(n.id),
+      });
+        console.log("Response from node deletion: ", response)
+        var data = await response.json();
+    
+        response = await fetch("http://localhost:3000/delete-edges", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(connection_ids),
+        });
+        data = await response.json();
+}
 
 export const convertNodetoGoNode = (node: Node) => {
     console.log("Converting node to Go node: ", node)
@@ -86,6 +150,9 @@ export const convertGoEdgeToEdge = (e: { Id: string, Source: string, Target: str
         source: e["Source"],
         target: e["Target"],
         animated: e["Animated"],
+        sourceHandle: e["SourceHandle"],
+        targetHandle: e["TargetHandle"],
+        type: e["Type"],
     }
 }
 
@@ -96,6 +163,9 @@ export const convertEdgeToGoEdge = (e: Edge) => {
         Source: e.source,
         Target: e.target,
         Animated: e.animated,
+        SourceHandle: e.sourceHandle,
+        TargetHandle: e.targetHandle,
+        Type: e.type,
     }
 }
 
@@ -117,7 +187,7 @@ export const getNodeStatus = async (node: Node) => {
 
 export const updateAllNodesStatus = async () => {
     nodes.value.forEach(async (node) => {
-        if (node.type === "custom") {
+        if (node.type === "queryNode") {
             const status = await getNodeStatus(node)
             node.data.status = status
         }
@@ -135,7 +205,8 @@ export const getFlowState = async () => {
     nodes.value = data.nodes.map(convertGoNodeToNode)
     edges.value = data.edges.map(convertGoEdgeToEdge)
     await updateAllNodesStatus()
-    console.log("Flow state loaded: ", nodes)
+    console.log("Flow state loaded Nodes: ", nodes.value)
+    console.log("Flow state loaded Edges: ", edges.value)
 }
 
 export const updateNode = async (node: Node) => {

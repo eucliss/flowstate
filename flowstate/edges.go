@@ -2,17 +2,22 @@ package flowstate
 
 import (
 	"context"
+	"fmt"
 )
 
 type Edge struct {
-	Id       string `redis:"id"`
-	Source   string `redis:"source"`
-	Target   string `redis:"target"`
-	Animated bool   `redis:"animated"`
+	Id           string `redis:"id"`
+	Source       string `redis:"source"`
+	Target       string `redis:"target"`
+	Animated     bool   `redis:"animated"`
+	SourceHandle string `redis:"sourceHandle"`
+	TargetHandle string `redis:"targetHandle"`
+	Type         string `redis:"type"`
 }
 
 func AddEdge(edge Edge) error {
 	ctx := context.Background()
+	fmt.Println("Adding edge: ", edge)
 	err := Fs.DbClient.HSet(ctx, "edge:"+edge.Id, edge).Err()
 	if err != nil {
 		return err
@@ -22,6 +27,7 @@ func AddEdge(edge Edge) error {
 
 func ConnectEdge(edge Edge) error {
 	ctx := context.Background()
+	fmt.Println("Connecting edge: ", edge)
 	err := Fs.DbClient.HSet(ctx, "edge:"+edge.Id, edge).Err()
 	if err != nil {
 		return err
@@ -57,21 +63,27 @@ func LoadEdges() []Edge {
 		panic(err)
 	}
 
+	fmt.Println("Loaded edges: ", edges)
 	return edges
 }
 
 func AddStartingEdges() {
 	edges := []Edge{
 		{
-			Id:     "1->2",
-			Source: "1",
-			Target: "2",
+			Id:           "1->2",
+			Source:       "1",
+			Target:       "2",
+			SourceHandle: "bottom",
+			TargetHandle: "top",
+			Animated:     true,
 		},
 		{
-			Id:       "2->3",
-			Source:   "2",
-			Target:   "3",
-			Animated: true,
+			Id:           "2->3",
+			Source:       "2",
+			Target:       "3",
+			SourceHandle: "top",
+			TargetHandle: "bottom",
+			Animated:     true,
 		},
 	}
 

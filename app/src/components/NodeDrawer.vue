@@ -13,6 +13,8 @@ const sqlQuery = ref('')
 const type = ref(nodeTypes[0])
 const jsonData = ref('')
 const nodeType = ref('')
+const count = ref(0)
+const status = ref(false)
 
 const successRoute = ref<ComparisonType>({
     leftValue: "",
@@ -125,6 +127,8 @@ if (props.selectedNode) {
   try {
     successRoute.value = props.selectedNode.data.successRoute
     failureRoute.value = props.selectedNode.data.failureRoute
+    count.value = props.selectedNode.data.count
+    status.value = props.selectedNode.data.status
   } catch (error) {
     console.error('Error parsing successRoute or failureRoute:', error)
   }

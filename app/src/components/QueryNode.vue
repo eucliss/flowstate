@@ -6,6 +6,7 @@ import { getNodeStatus } from '../functions'
 
 // props were passed from the slot using `v-bind="customNodeProps"`
 const props = defineProps<NodeProps>()
+const emit = defineEmits(['updateNodeInternals'])
 
 // Replace ref and onMounted with a computed property
 const status = computed(() => props.data.status)
@@ -13,16 +14,18 @@ const status = computed(() => props.data.status)
 </script>
 
 <template>
+<Handle class="vue-flow__handle horizontal" id="bottom" type="source" :position="Position.Bottom" />
+<Handle class="vue-flow__handle horizontal" id="top" type="target" :position="Position.Top" />
+<Handle class="vue-flow__handle vertical" id="left" type="source" :position="Position.Left" />
+<Handle class="vue-flow__handle vertical" id="right" type="source" :position="Position.Right" />    
   <div 
     :class="[
       'vue-flow__node',
       status ? 'vue-flow__node-success' : 'vue-flow__node-failed'
     ]"
-    style="position: relative;"
-  >
-    <Handle type="target" :position="Position.Top" :connectable="true" />
+    style="position: relative; z-index: 1;"
+    >
     <div>{{ props.data.label }}</div>
-    <Handle type="source" :position="Position.Bottom" :connectable="true" />
   </div>
 </template>
 
@@ -35,17 +38,22 @@ const status = computed(() => props.data.status)
 
 .vue-flow__node-success,
 .vue-flow__node-failed {
+  position: relative;
+  z-index: 1;
   min-width: 150px;
   min-height: 40px;
+  height: 60px;
+  width: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid white;
+  border-radius: 4px;
 }
 
 .vue-flow__node-success {
   background: green;
   color: white;
-  border: 1px solid green;
   border-radius: 4px;
   box-shadow: 0 0 0 1px green;
   padding: 8px;
@@ -54,9 +62,22 @@ const status = computed(() => props.data.status)
 .vue-flow__node-failed {
   background: red;
   color: white;
-  border: 1px solid red;
   border-radius: 4px;
   box-shadow: 0 0 0 1px red;
   padding: 8px;
+}
+
+.vue-flow__handle.horizontal{
+    background-color:#000000;
+    height:13px;
+    width:50px;
+    border-radius:2px;
+}
+
+.vue-flow__handle.vertical{
+    background-color:#000000;
+    height:24px;
+    width:12px;
+    border-radius:2px;
 }
 </style>

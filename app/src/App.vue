@@ -2,18 +2,20 @@
 import { ref, watch, onMounted, provide } from 'vue'
 import type { Node, Edge } from '@vue-flow/core'  
 import { VueFlow, useVueFlow } from '@vue-flow/core'
+import { Controls } from '@vue-flow/controls'
 
 import Background from './components/Background.vue'
-import CustomNode from './components/CustomNode.vue'
+import QueryNode from './components/QueryNode.vue'
 import MenuBar from './components/MenuBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import NodeDrawer from './components/NodeDrawer.vue'
-import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState, updateAllNodesStatus } from './functions'
-import type { ComparisonType } from './functions'
+import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState, updateAllNodesStatus, handleEdgeKeyDown, handleNodeKeyDown} from './functions'
+import type { ComparisonType, globalCustomNodeTypes, globalCustomNode } from './functions'
+import CountNode from './components/CountNode.vue'
 
-type CustomNodeTypes = 'custom' | 'special'
 
-type CustomNode = Node
+type CustomNodeTypes = globalCustomNodeTypes
+type CustomNode = globalCustomNode
 
 const ready = ref(false)
 
@@ -27,6 +29,7 @@ const {
   getIncomers,
   onEdgeClick, 
   onEdgesChange,
+  getSelectedEdges,
   onNodeDragStop,
   onConnect,
   onNodeClick
@@ -45,6 +48,8 @@ onNodeDragStop(async (event) => {
       sql: event.node.data.sql,
       successRoute: event.node.data.successRoute,
       failureRoute: event.node.data.failureRoute,
+      status: event.node.data.status,
+      count: event.node.data.count,
     },
     type: event.node.type,
   }
@@ -53,11 +58,16 @@ onNodeDragStop(async (event) => {
 })
 
 onConnect(async (event) => {
+  console.log("edge connected: ", event)
+  const id = crypto.randomUUID()
   const new_edge = {
-    id: event.source + "->" + event.target,
+    id: id,
     source: event.source,
     target: event.target,
-    animated: true,
+    animated: false,
+    sourceHandle: event.sourceHandle,
+    targetHandle: event.targetHandle,
+    type: "smoothstep",
   }
   edges.value.push(new_edge)
   await connectEdge(new_edge)
@@ -79,6 +89,8 @@ const localAddNode  = async (nodeData: { name: string, sql: string, type: string
       sql: nodeData.sql,
       successRoute: nodeData.successRoute,
       failureRoute: nodeData.failureRoute,
+      count: 0,
+      status: false
     },
   }
   nodes.value.push(new_node)
@@ -93,46 +105,27 @@ function removeEdge(id) {
 
 onMounted(async () => {
   await getFlowState()
-  console.log("nodes", nodes.value)
-  console.log("edges", edges.value)
+  console.log("Mounted nodes", nodes.value)
+  console.log("Mounted edges", edges.value)
   await updateAllNodesStatus()
   ready.value = true
   window.addEventListener('keydown', handleKeyDown)
-  const i = setInterval(async () => {
-    await updateAllNodesStatus()
-  }, 5000)
+  // const i = setInterval(async () => {
+  //   await updateAllNodesStatus()
+  // }, 5000)
 })
 
 const handleKeyDown = async (event) => {
+  console.log("handleKeyDown pressed")
+  console.log("key pressed: ", event.keyCode)
+  console.log("selected edges: ", getSelectedEdges.value)
   console.log("selected nodes: ", getSelectedNodes.value)
-  if (getSelectedNodes.value.length == 0) {
-    return
+  if (getSelectedEdges.value.length > 0) {
+    await handleEdgeKeyDown(event, getSelectedEdges.value)
   }
-  const selected_node = getSelectedNodes.value[0].id
-  const connections = getConnectedEdges(selected_node)
-  const connection_ids = connections.map((edge) => edge.id)
-  if (event.keyCode === 46 || event.keyCode === 8) {
-    onPaneClick() // Close drawer
-    var response = await fetch("http://localhost:3000/delete-node", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(selected_node),
-  });
-    console.log("response: ", response)
-    var data = await response.json();
-    console.log('Data fetched:', data);
-
-    response = await fetch("http://localhost:3000/delete-edges", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(connection_ids),
-    });
-    data = await response.json();
-    await getFlowState()
+  if(getSelectedNodes.value.length > 0) {
+    const connections = getConnectedEdges(getSelectedNodes.value[0].id)
+    await handleNodeKeyDown(event, getSelectedNodes.value, connections)
   }
 }
 
@@ -164,6 +157,8 @@ onPaneReady((i) => i.fitView())
 
 <template>
   <Background />
+  <Controls class="controls"/>
+
   <p style="color: white; font-size: 60px; text-align: center; margin-top: 200px;" v-if="!ready">Loading...</p>
   <div class="base-flow-container" v-if="ready">
     <VueFlow 
@@ -171,9 +166,12 @@ onPaneReady((i) => i.fitView())
       :edges="edges"
       @paneClick="onPaneClick"
     >
-      <template #node-custom="customNodeProps">
-        <CustomNode v-bind="customNodeProps" />
+      <template #node-queryNode="queryNodeProps">
+        <QueryNode v-bind="queryNodeProps" />
       </template>      
+      <template #node-countNode="countNodeProps">
+        <CountNode v-bind="countNodeProps" />
+      </template>
     </VueFlow>
     <MenuBar 
       @add-node="localAddNode"
@@ -194,7 +192,22 @@ onPaneReady((i) => i.fitView())
 
 /* import the default theme, this is optional but generally recommended */
 @import '@vue-flow/core/dist/theme-default.css';
+@import '@vue-flow/controls/dist/style.css';
 
+.vue-flow__controls-button {
+  background: #fefefe;
+  border: none;
+  border-bottom: 1px solid #eee;
+  box-sizing: content-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  user-select: none;
+  padding: 5px;
+}
 
 .base-flow-container {
   width: 100vw;
