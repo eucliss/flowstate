@@ -16,9 +16,9 @@ const toggleSidebar = () => {
     <button class="toggle-button" @click="toggleSidebar">
       <span class="carrot" :class="{ 'rotated': isOpen }">›</span>
     </button>
-    <div class="nodes" v-for="node in nodeTypes" :key="node">
       <div 
-        :class="['vue-flow__node', `vue-flow__node-${node}`]"
+        v-for="node in nodeTypes" :key="node"
+        :class="[`vue-flow__node-${node}`]"
         :draggable="true" 
         @dragstart="onDragStart($event, node)"
       >
@@ -27,12 +27,6 @@ const toggleSidebar = () => {
         </div>
       </div>
 
-      <div class="nodes">
-        <template v-for="node in nodeTypes" :key="node">
-          
-        </template>
-      </div>
-    </div>
   </aside>
 </template>
 
