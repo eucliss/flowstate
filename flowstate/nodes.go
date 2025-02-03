@@ -17,8 +17,8 @@ type ComparisonType struct {
 type Node struct {
 	Id           string          `json:"id" redis:"id"`
 	Type         string          `json:"type" redis:"type"`
-	X            int             `json:"x" redis:"x"`
-	Y            int             `json:"y" redis:"y"`
+	X            float64         `json:"x" redis:"x"`
+	Y            float64         `json:"y" redis:"y"`
 	Label        string          `json:"label" redis:"label"`
 	SQL          string          `json:"sql" redis:"sql"`
 	SuccessRoute *ComparisonType `json:"successRoute" redis:"successRoute"`
@@ -43,10 +43,10 @@ func convertRedisDataToNode(data map[string]string) Node {
 	}
 
 	// Parse position
-	if x, err := strconv.Atoi(data["x"]); err == nil {
+	if x, err := strconv.ParseFloat(data["x"], 64); err == nil {
 		node.X = x
 	}
-	if y, err := strconv.Atoi(data["y"]); err == nil {
+	if y, err := strconv.ParseFloat(data["y"], 64); err == nil {
 		node.Y = y
 	}
 
@@ -137,10 +137,10 @@ func LoadNodes() []Node {
 		}
 
 		// Parse position
-		if x, err := strconv.Atoi(data["x"]); err == nil {
+		if x, err := strconv.ParseFloat(data["x"], 64); err == nil {
 			node.X = x
 		}
-		if y, err := strconv.Atoi(data["y"]); err == nil {
+		if y, err := strconv.ParseFloat(data["y"], 64); err == nil {
 			node.Y = y
 		}
 

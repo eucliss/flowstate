@@ -1,0 +1,112 @@
+/* Base node styles */
+.vue-flow__node-countNode {
+  background-color: #000000;
+  position: relative;
+  z-index: 1;
+  min-width: 150px;
+  min-height: 40px;
+  height: 60px;
+  width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid white;
+  border-radius: 4px;
+}
+
+
+.vue-flow__handle.horizontal{
+    background-color:#000000;
+    height:13px;
+    width:50px;
+    border-radius:2px;
+}
+
+.vue-flow__handle.vertical{
+    background-color:#000000;
+    height:24px;
+    width:12px;
+    border-radius:2px;
+}
+
+.vue-flow__node-queryNode {
+    background: grey;
+    color: black;
+    border: 1px solid rgb(0, 0, 0);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px grey;
+    padding: 8px;
+    font-size: 10px;
+    min-width: 150px;
+    min-height: 40px;
+    position: relative;
+}
+
+/* Ensure the label is visible on grey background */
+.vue-flow__node-queryNode .label {
+    color: white; /* or any other color that contrasts with grey */
+}
+
+/* Handle styles */
+.vue-flow__handle.horizontal {
+  background-color: #000000;
+  height: 13px;
+  width: 50px;
+  border-radius: 2px;
+}
+
+.vue-flow__handle.vertical {
+  background-color: #000000;
+  height: 24px;
+  width: 12px;
+  border-radius: 2px;
+}
+
+/* Node wrapper styles */
+.wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Label styles */
+.label {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 10px;
+  color: #7d7d7d;
+}
+
+/* Count styles */
+.count {
+  font-size: 30px;
+  color: #ffffff;
+}
+
+/* Success/Failure node states */
+.vue-flow__node-failure {
+  background: red;
+  color: white;
+  border: 1px solid red;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px red;
+  padding: 8px;
+}
+
+.vue-flow__node-success {
+  background: green;
+  color: white;
+  border: 1px solid black;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px black;
+  padding: 8px;
+}
+
+/* Import necessary Vue Flow styles */
+@import '@vue-flow/core/dist/style.css';
+@import '@vue-flow/core/dist/theme-default.css';
+@import '@vue-flow/controls/dist/style.css';
