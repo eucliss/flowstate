@@ -92,6 +92,7 @@ func handleGetNodes(w http.ResponseWriter, req *http.Request) {
 
 func handleAddNode(w http.ResponseWriter, req *http.Request) {
 	// Check if the request body is nil
+	fmt.Println("handleAddNode - Request:", req)
 	node, err := ParseNodeFromRequest(req)
 	if err != nil {
 		http.Error(w, "Error parsing node: "+err.Error(), http.StatusBadRequest)

@@ -10,7 +10,11 @@ import NodeDrawer from './components/NodeDrawer.vue'
 import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState, updateAllNodesStatus, handleEdgeKeyDown, handleNodeKeyDown} from './functions'
 import type { ComparisonType, globalCustomNodeTypes, globalCustomNode } from './functions'
 import CountNode from './components/nodes/CountNode.vue'
+import useDragAndDrop from './useDnD'
+import Sidebar from './components/Sidebar.vue'
 
+
+const { onDragOver, onDrop, onDragLeave, isDragOver } = useDragAndDrop()
 
 type CustomNodeTypes = globalCustomNodeTypes
 type CustomNode = globalCustomNode
@@ -33,7 +37,8 @@ const {
   onNodeClick
 } = instance
 
-onNodeDragStop(async (event) => { 
+onNodeDragStop(async (event) => {
+  // If the node is dropped on the pane, ignore it
   console.log("node dragged: ", event)
   const updated_node = {
     id: event.node.id,
@@ -108,9 +113,9 @@ onMounted(async () => {
   await updateAllNodesStatus()
   ready.value = true
   window.addEventListener('keydown', handleKeyDown)
-  const i = setInterval(async () => {
-    await updateAllNodesStatus()
-  }, 5000)
+  // const i = setInterval(async () => {
+  //   await updateAllNodesStatus()
+  // }, 5000)
 })
 
 const handleKeyDown = async (event) => {
@@ -163,27 +168,33 @@ onPaneReady((i) => i.fitView())
 </script>
 
 <template>
-  <Background />
   <Controls class="controls"/>
 
   <p style="color: white; font-size: 60px; text-align: center; margin-top: 200px;" v-if="!ready">Loading...</p>
-  <div class="base-flow-container" v-if="ready">
+  <div class="base-flow-container dnd-flow" v-if="ready" @drop="onDrop">
+    <Sidebar />
     <VueFlow 
       :nodes="nodes" 
       :edges="edges"
       @paneClick="onPaneClick"
+      @dragover="onDragOver"
+      @drop="onDrop"
+      @dragleave="onDragLeave"
     >
+      <Background/>
+      
       <template #node-queryNode="queryNodeProps">
         <QueryNode v-bind="queryNodeProps" />
       </template>      
       <template #node-countNode="countNodeProps">
         <CountNode v-bind="countNodeProps" />
       </template>
+    
     </VueFlow>
-    <MenuBar 
+    <!-- <MenuBar 
       @add-node="localAddNode"
       @reset="resetFlowState"
-    />
+    /> -->
     <NodeDrawer 
       v-if="drawerOpen"
       @closeDrawer="drawerOpen = false"
@@ -196,24 +207,47 @@ onPaneReady((i) => i.fitView())
 <style>
 /* import the necessary styles for Vue Flow to work */
 @import '@vue-flow/core/dist/style.css';
-
-/* import the default theme, this is optional but generally recommended */
 @import '@vue-flow/core/dist/theme-default.css';
 @import '@vue-flow/controls/dist/style.css';
 
+/* Reposition controls to bottom right */
+.controls {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  top: unset !important;
+  left: unset !important;
+  z-index: 5 !important;
+}
+
 .vue-flow__controls-button {
-  background: #fefefe;
-  border: none;
-  border-bottom: 1px solid #eee;
-  box-sizing: content-box;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  user-select: none;
-  padding: 5px;
+  background: #222222;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+  width: 32px;  /* Slightly larger buttons */
+  height: 32px;
+}
+
+.vue-flow__controls-button:hover {
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+}
+
+.vue-flow__controls-button:active {
+  transform: translateY(0px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Add a subtle glow to the controls container on hover */
+.controls:hover .vue-flow__controls-button {
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .base-flow-container {

@@ -25,7 +25,7 @@ const count = computed(() => {
         <Handle class="vue-flow__handle vertical" id="right" type="source" :position="Position.Right" />    
     </div>
     <div 
-        :class="['vue-flow__node']"
+        :class="['vue-flow__node-count']"
         style="position: relative; z-index: 1;"
     >
         <div class="wrapper">
@@ -35,7 +35,7 @@ const count = computed(() => {
     </div>
 </template>
 
-<style scoped>
+<style scoped >
 /* import the necessary styles for Vue Flow to work */
 @import '@vue-flow/core/dist/style.css';
 
@@ -64,7 +64,7 @@ const count = computed(() => {
     color: #ffffff;
 }
 
-.vue-flow__node {
+.vue-flow__node-count {
   background-color: #000000;
   position: relative;
   z-index: 1;

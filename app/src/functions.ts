@@ -246,6 +246,7 @@ export const addNode = async (node: Node) => {
         body: JSON.stringify(goNode),
     })
     const data = await response.json()
+    console.log("AddNodeDrawer - Response:", data)
     return data
 }
 

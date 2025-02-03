@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { NodeProps } from '@vue-flow/core'  
 import { Position, Handle } from '@vue-flow/core'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { getNodeStatus } from '../../functions'
 
 // props were passed from the slot using `v-bind="customNodeProps"`
@@ -10,6 +10,7 @@ const emit = defineEmits(['updateNodeInternals'])
 
 // Replace ref and onMounted with a computed property
 const status = computed(() => props.data.status)
+const label = computed(() => props.data.label || "Query Node")
 
 </script>
 
@@ -25,7 +26,7 @@ const status = computed(() => props.data.status)
     ]"
     style="position: relative; z-index: 1;"
     >
-    <div>{{ props.data.label }}</div>
+    <div class="label">{{ label }}</div>
   </div>
 </template>
 
