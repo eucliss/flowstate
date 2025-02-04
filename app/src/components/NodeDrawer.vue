@@ -8,6 +8,7 @@ import type { ComparisonType} from '../functions'
 import { addNode, updateNode } from '../functions'
 import QueryDrawer from './drawers/QueryDrawer.vue'
 import CountDrawer from './drawers/CountDrawer.vue'
+import TextDrawer from './drawers/TextDrawer.vue'
 const emit = defineEmits(['closeDrawer'])
 
 const nodeName = ref('')
@@ -17,6 +18,7 @@ const jsonData = ref('')
 const nodeType = ref('')
 const count = ref(0)
 const status = ref(false)
+const content = ref('')
 
 const successRoute = ref<ComparisonType>({
     leftValue: "",
@@ -54,6 +56,7 @@ const addNewNode = () => {
         data: {
             label: nodeName.value,
             sql: sqlQuery.value,
+            content: content.value,
             successRoute: successRoute.value,
             failureRoute: failureRoute.value,
         },
@@ -62,6 +65,7 @@ const addNewNode = () => {
     nodeName.value = ''
     sqlQuery.value = ''
     jsonData.value = ''
+    content.value = ''
     type.value = nodeTypes[0]
     emit('closeDrawer')
 }
@@ -77,6 +81,7 @@ const updateExistingNode = () => {
         data: {
             label: nodeName.value,
             sql: sqlQuery.value,
+            content: content.value,
             successRoute: successRoute.value,
             failureRoute: failureRoute.value,
         },
@@ -85,6 +90,7 @@ const updateExistingNode = () => {
     nodeName.value = ''
     sqlQuery.value = ''
     jsonData.value = ''
+    content.value = ''
     type.value = nodeTypes[0]
     emit('closeDrawer')
 }
@@ -102,12 +108,17 @@ const updateSqlQuery = (newValue: string) => {
   sqlQuery.value = newValue
 }
 
+const updateContent = (newValue: string) => {
+  content.value = newValue
+}
+
 if (props.selectedNode) {
   console.log("selected node: ", props.selectedNode)
   nodeName.value = props.selectedNode.data.label
   sqlQuery.value = props.selectedNode.data.sql
   type.value = props.selectedNode.type
   jsonData.value = props.selectedNode.data.json
+  content.value = props.selectedNode.data.content || ''
   try {
     successRoute.value = props.selectedNode.data.successRoute
     failureRoute.value = props.selectedNode.data.failureRoute
@@ -185,6 +196,11 @@ const updateFailureRoute = (value: ComparisonType) => {
                 v-if="type === 'countNode'"
                 :query="sqlQuery" 
                 @update:query="updateSqlQuery"
+            />
+            <TextDrawer
+                v-if="type === 'textNode'"
+                :content="content"
+                @update:content="updateContent"
             />
 
           </div>

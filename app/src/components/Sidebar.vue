@@ -16,9 +16,16 @@ const toggleSidebar = () => {
     <button class="toggle-button" @click="toggleSidebar">
       <span class="carrot" :class="{ 'rotated': isOpen }">›</span>
     </button>
+    <div class="title-box">
+      <h1>Flowstate</h1>
+    </div>
+    <div class="instruction-text">Drag nodes to the graph</div>
+    
+    <div class="nodes-table">
       <div 
-        v-for="node in nodeTypes" :key="node"
-        :class="[`vue-flow__node-${node}`]"
+        v-for="node in nodeTypes" 
+        :key="node"
+        :class="['node-row', `vue-flow__node-${node}`]"
         :draggable="true" 
         @dragstart="onDragStart($event, node)"
       >
@@ -26,18 +33,20 @@ const toggleSidebar = () => {
           <div class="label">{{ nodeTypesMap[node] }}</div>
         </div>
       </div>
-
+    </div>
   </aside>
 </template>
 
 <style scoped>
 @import '../assets/nodes.css';
+@import '../assets/main.css';
 
 aside {
   position: fixed;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  height: 100vh;
+  transform: translateX(0);
   padding: 20px;
   z-index: 999;
   pointer-events: auto;
@@ -51,7 +60,7 @@ aside {
 }
 
 aside.closed {
-  transform: translate(-100%, -50%);
+  transform: translateX(-100%);
 }
 
 .toggle-button {
@@ -95,39 +104,48 @@ aside.closed {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.nodes {
-  margin-bottom: 25px;
-  display: block;
-  width: 100%;
-  position: relative;
+.nodes-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 180px;
+  margin-top: 20px;
 }
 
-.nodes::after {
-  content: '';
-  position: absolute;
-  bottom: -12px;
-  left: 0;
+.node-row {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  height: 50px;
   width: 100%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+}
+
+.wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .vue-flow__node {
   cursor: grab;
-  width: 140px;
-  height: 50px;
+  width: 100%;
+  height: 100%;
   min-width: unset;
+  max-width: 100%;
   min-height: unset;
   transition: all 0.2s ease;
   position: relative;
-  display: block;
-  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #222222;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 500;
 }
 
 .vue-flow__node:hover {
@@ -161,5 +179,29 @@ aside.closed {
   text-align: center;
   width: 100%;
   padding: 0 10px;
+}
+
+.title-box {
+  width: 100%;
+  padding: 15px 0;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.title-box h1 {
+  font-size: 32px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.instruction-text {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin: 10px 0;
 }
 </style>

@@ -82,11 +82,11 @@ const handleTest = async () => {
         :model-value="successRoute"
         @update:model-value="updateSuccessRoute"
     />
-    <label>Failure Route</label>
+    <!-- <label>Failure Route</label>
     <Comparison 
         :model-value="failureRoute"
         @update:model-value="updateFailureRoute"
-    />
+    /> -->
     </div>
 </template>
 

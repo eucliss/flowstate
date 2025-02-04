@@ -1,0 +1,17 @@
+.title-box {
+  width: 100%;
+  padding: 15px 0;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.title-box h1 {
+  font-size: 32px;
+  font-weight: 600;
+  color: #4169E1;
+  letter-spacing: 0.5px;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+} 

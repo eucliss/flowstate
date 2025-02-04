@@ -142,12 +142,13 @@ func handleNodeRouteStatus(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleUpdateNode(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("handleUpdateNode - Request:", req)
 	node, err := ParseNodeFromRequest(req)
 	if err != nil {
 		http.Error(w, "Error parsing node: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("node", node)
+	fmt.Println("handleUpdateNode - node", node)
 
 	err = UpdateNode(node)
 	if err != nil {

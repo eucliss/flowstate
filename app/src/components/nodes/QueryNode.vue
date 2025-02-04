@@ -22,7 +22,7 @@ const label = computed(() => props.data.label || "Query Node")
   <div 
     :class="[
       'vue-flow__node',
-      status ? 'vue-flow__node-success' : 'vue-flow__node-failed'
+      status ? 'vue-flow__node-success' : 'vue-flow__node-failed',
     ]"
     style="position: relative; z-index: 1;"
     >
@@ -76,6 +76,14 @@ const label = computed(() => props.data.label || "Query Node")
   color: white;
   border-radius: 4px;
   box-shadow: 0 0 0 1px red;
+  padding: 8px;
+}
+
+.vue-flow__node-none {
+  background: #222222;
+  color: white;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px #222222;
   padding: 8px;
 }
 
