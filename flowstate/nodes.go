@@ -21,6 +21,7 @@ type Node struct {
 	Y            float64         `json:"y" redis:"y"`
 	Label        string          `json:"label" redis:"label"`
 	SQL          string          `json:"sql" redis:"sql"`
+	Content      string          `json:"content" redis:"content"`
 	SuccessRoute *ComparisonType `json:"successRoute" redis:"successRoute"`
 	FailureRoute *ComparisonType `json:"failureRoute" redis:"failureRoute"`
 }
@@ -34,12 +35,14 @@ func (c *ComparisonType) UnmarshalBinary(data []byte) error {
 }
 
 func convertRedisDataToNode(data map[string]string) Node {
+	fmt.Println("Redis to Node ========================", data)
 	// Create the node with basic fields
 	node := Node{
-		Id:    data["id"],
-		Type:  data["type"],
-		Label: data["label"],
-		SQL:   data["sql"],
+		Id:      data["id"],
+		Type:    data["type"],
+		Label:   data["label"],
+		SQL:     data["sql"],
+		Content: data["content"],
 	}
 
 	// Parse position
@@ -130,10 +133,11 @@ func LoadNodes() []Node {
 
 		// Create the node with basic fields
 		node = Node{
-			Id:    data["id"],
-			Type:  data["type"],
-			Label: data["label"],
-			SQL:   data["sql"],
+			Id:      data["id"],
+			Type:    data["type"],
+			Label:   data["label"],
+			SQL:     data["sql"],
+			Content: data["content"],
 		}
 
 		// Parse position
@@ -186,6 +190,7 @@ func UpdateNode(node Node) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("Updated node: ", node)
 	return nil
 }
 

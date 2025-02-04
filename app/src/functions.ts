@@ -4,13 +4,14 @@ export const URL = 'http://localhost:3000'
 
 // SELECT * FROM 'test_torq3'
 
-export const nodeTypes = ['default', 'queryNode', 'countNode']
+export const nodeTypes = ['default', 'queryNode', 'countNode', 'textNode']
 export const nodeTypesMap = {
-    'default': 'Text',
+    'textNode': 'Text',
+    'default': 'Default',
     'queryNode': 'Query',
     'countNode': 'Count',
 }
-export type globalCustomNodeTypes = 'queryNode' | 'countNode'
+export type globalCustomNodeTypes = 'queryNode' | 'countNode' | 'textNode'
 export type globalCustomNode = Node
 export const edgeTypes = ['smoothstep']
 
@@ -27,6 +28,7 @@ export type NodeData = {
     failureRoute: ComparisonType
     status: boolean
     count: number
+    content: string
 }
 
 export type EdgeData = {
@@ -103,6 +105,7 @@ export const convertNodetoGoNode = (node: Node) => {
         y: node.position.y,
         label: node.data.label,
         sql: node.data.sql,
+        content: node.data.content,
         successRoute: {
             leftValue: node.data.successRoute.leftValue,
             rightValue: node.data.successRoute.rightValue,
@@ -123,6 +126,7 @@ export const convertGoNodeToNode = (n: {
     Y: number, 
     Label: string, 
     SQL: string,
+    Content: string,
     SuccessRoute: ComparisonType,
     FailureRoute: ComparisonType,
 }) => {
@@ -137,6 +141,7 @@ export const convertGoNodeToNode = (n: {
         data: {
             label: n["label"],
             sql: n["sql"],
+            content: n["content"],
             successRoute: n["successRoute"],
             failureRoute: n["failureRoute"],
         },

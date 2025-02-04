@@ -5,20 +5,23 @@ import { Background } from '@vue-flow/background'
 <template>
     <div class="dropzone-background">
         <Background 
+            class="dots-background"
             variant="dots"
             height="100%"
             width="100%"
             size="2"
             gap="25"
         />
-    <div class="overlay">
-      <slot />
-    </div>
+        <div class="overlay">
+            <slot />
+        </div>
     </div>
 </template>
 
 <style>
-
+@import '@vue-flow/core/dist/style.css';
+@import '@vue-flow/core/dist/theme-default.css';
+@import '@vue-flow/controls/dist/style.css';
 
 .dropzone-background {
     position:relative;
@@ -38,4 +41,5 @@ import { Background } from '@vue-flow/background'
     z-index:1;
     pointer-events:none
 }
+
 </style>

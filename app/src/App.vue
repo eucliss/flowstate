@@ -4,7 +4,9 @@ import type { Node, Edge } from '@vue-flow/core'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Controls } from '@vue-flow/controls'
 import Background from './components/Background.vue'
+// import { Background } from '@vue-flow/background'
 import QueryNode from './components/nodes/QueryNode.vue'
+import TextNode from './components/nodes/TextNode.vue'
 import MenuBar from './components/MenuBar.vue'
 import NodeDrawer from './components/NodeDrawer.vue'
 import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState, updateAllNodesStatus, handleEdgeKeyDown, handleNodeKeyDown} from './functions'
@@ -53,6 +55,7 @@ onNodeDragStop(async (event) => {
       failureRoute: event.node.data.failureRoute,
       status: event.node.data.status,
       count: event.node.data.count,
+      content: event.node.data.content,
     },
     type: event.node.type,
   }
@@ -71,6 +74,8 @@ onConnect(async (event) => {
     sourceHandle: event.sourceHandle,
     targetHandle: event.targetHandle,
     type: "smoothstep",
+    // updatable: true,
+    // label: "test",
   }
   edges.value.push(new_edge)
   await connectEdge(new_edge)
@@ -93,7 +98,8 @@ const localAddNode  = async (nodeData: { name: string, sql: string, type: string
       successRoute: nodeData.successRoute,
       failureRoute: nodeData.failureRoute,
       count: 0,
-      status: false
+      status: false,
+      content: "",
     },
   }
   nodes.value.push(new_node)
@@ -162,7 +168,16 @@ const onPaneClick = () => {
   selectedNode.value = null
 }
 
+const updateNodeData = async (nodeId: string, newData: any) => {
+  const updatedNode = {
+    ...nodes.value.find(node => node.id === nodeId),
+    data: newData
+  }
+  await updateNode(updatedNode)
+}
+
 provide('selectedNode', selectedNode)
+provide('updateNodeData', updateNodeData)
 
 onPaneReady((i) => i.fitView())
 </script>
@@ -173,6 +188,7 @@ onPaneReady((i) => i.fitView())
   <p style="color: white; font-size: 60px; text-align: center; margin-top: 200px;" v-if="!ready">Loading...</p>
   <div class="base-flow-container dnd-flow" v-if="ready" @drop="onDrop">
     <Sidebar />
+    
     <VueFlow 
       :nodes="nodes" 
       :edges="edges"
@@ -189,7 +205,12 @@ onPaneReady((i) => i.fitView())
       <template #node-countNode="countNodeProps">
         <CountNode v-bind="countNodeProps" />
       </template>
-    
+      <template #node-textNode="textNodeProps">
+        <TextNode 
+          v-bind="textNodeProps" 
+          :updateNodeData="updateNodeData"
+        />
+      </template>
     </VueFlow>
     <!-- <MenuBar 
       @add-node="localAddNode"
