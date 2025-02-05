@@ -4,14 +4,15 @@ export const URL = 'http://localhost:3000'
 
 // SELECT * FROM 'test_torq3'
 
-export const nodeTypes = ['default', 'queryNode', 'countNode', 'textNode']
+export const nodeTypes = ['default', 'queryNode', 'countNode', 'textNode', 'flowNode']
 export const nodeTypesMap = {
     'textNode': 'Text',
     'default': 'Default',
     'queryNode': 'Query',
     'countNode': 'Count',
+    'flowNode': 'Flow',
 }
-export type globalCustomNodeTypes = 'queryNode' | 'countNode' | 'textNode'
+export type globalCustomNodeTypes = 'queryNode' | 'countNode' | 'textNode' | 'flowNode'
 export type globalCustomNode = Node
 export const edgeTypes = ['smoothstep']
 
