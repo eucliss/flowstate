@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { nodeTypes, nodeTypesMap } from '../functions'
 import type { Node } from '@vue-flow/core'
 import type { PropType } from 'vue'
@@ -112,26 +112,24 @@ const updateContent = (newValue: string) => {
   content.value = newValue
 }
 
-if (props.selectedNode) {
-  console.log("selected node: ", props.selectedNode)
-  nodeName.value = props.selectedNode.data.label
-  sqlQuery.value = props.selectedNode.data.sql
-  type.value = props.selectedNode.type
-  jsonData.value = props.selectedNode.data.json
-  content.value = props.selectedNode.data.content || ''
-  try {
-    successRoute.value = props.selectedNode.data.successRoute
-    failureRoute.value = props.selectedNode.data.failureRoute
-    count.value = props.selectedNode.data.count
-    status.value = props.selectedNode.data.status
-  } catch (error) {
-    console.error('Error parsing successRoute or failureRoute:', error)
+watch(() => props.selectedNode, (newNode) => {
+  if (newNode) {
+    nodeName.value = newNode.data.label
+    sqlQuery.value = newNode.data.sql
+    type.value = newNode.type
+    jsonData.value = newNode.data.json
+    content.value = newNode.data.content || ''
+    try {
+      successRoute.value = newNode.data.successRoute
+      failureRoute.value = newNode.data.failureRoute
+      count.value = newNode.data.count
+      status.value = newNode.data.status
+    } catch (error) {
+      console.error('Error parsing successRoute or failureRoute:', error)
+    }
   }
+}, { immediate: true })
 
-  
-  console.log('Selected node type:', type.value)
-  console.log('Full node data:', props.selectedNode)
-}
 console.log('Available nodeTypes:', nodeTypes)
 console.log('Current selected type:', type.value)
 

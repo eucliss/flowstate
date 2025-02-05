@@ -7,6 +7,7 @@ import Background from './components/Background.vue'
 // import { Background } from '@vue-flow/background'
 import QueryNode from './components/nodes/QueryNode.vue'
 import TextNode from './components/nodes/TextNode.vue'
+import FlowNode from './components/nodes/FlowNode.vue'
 import MenuBar from './components/MenuBar.vue'
 import NodeDrawer from './components/NodeDrawer.vue'
 import { testing, nodes, edges, getFlowState, updateNode, connectEdge, addNode, resetFlowState, updateAllNodesStatus, handleEdgeKeyDown, handleNodeKeyDown} from './functions'
@@ -156,7 +157,7 @@ const resetFlow = async () => {
 const selectedNode = ref<Node | null>(null)
 const drawerOpen = ref(false)
 onNodeClick((event) => {
-  selectedNode.value = null
+  onPaneClick()
   selectedNode.value = event.node
   drawerOpen.value = true  // Open drawer when clicking on a node
   console.log("selected node: ", selectedNode.value) 
@@ -198,6 +199,10 @@ onPaneReady((i) => i.fitView())
       @dragleave="onDragLeave"
     >
       <Background/>
+
+      <template #node-flowNode="flowNodeProps">
+        <FlowNode v-bind="flowNodeProps"  />
+      </template>
       
       <template #node-queryNode="queryNodeProps">
         <QueryNode v-bind="queryNodeProps" />
